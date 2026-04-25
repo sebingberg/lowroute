@@ -8,7 +8,8 @@
 - DB: PostgreSQL.
 - Job queue: pg-boss.
 - Logging: Pino.
-- Tests: Vitest.
+- Verification: Vitest, Biome, markdownlint, Lefthook, and CI Postgres
+  migrations.
 
 ## Components
 

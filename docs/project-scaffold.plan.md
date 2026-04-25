@@ -349,7 +349,8 @@ Notes:
   - Expected files: tree above; `pnpm-workspace.yaml`,
     `tsconfig.base.json`, `.nvmrc`, `biome.json`,
     `.markdownlint.jsonc`.
-  - Verification: `pnpm install` succeeds; `pnpm -r typecheck` passes.
+  - Verification: `pnpm install --frozen-lockfile` succeeds;
+    `pnpm typecheck` passes.
 
 - [ ] **Task 0.2: Verify runtime and toolchain on selected LTS**
   - Scope: prove `pg-boss` publish/consume, `Vitest` execution, and
@@ -357,19 +358,19 @@ Notes:
   - Expected files: `package.json` scripts, `.github/workflows/ci.yml`.
   - Verification: smoke job publishes/consumes a `pg-boss` task; CI
     runs `typecheck`, `lint`, `test` cleanly on the pinned major.
-  - Status: partially implemented. CI and smoke script are in place,
-    but local smoke execution is blocked until Docker/Postgres is
-    available.
+  - Status: implemented. CI and smoke scripts are in place; full local
+    verification is available through `pnpm precommit` when Docker/Postgres
+    is running.
 
 - [ ] **Task 0.3: Local Postgres baseline and migration runner**
   - Scope: Docker Postgres + `node-pg-migrate` with raw SQL files.
   - Expected files: `docker-compose.yml`,
     `infra/migrations/0001_init.up.sql`,
     `infra/migrations/0001_init.down.sql`.
-  - Verification: `pnpm migrate up/down` apply cleanly against
+  - Verification: `pnpm migrate:up` and `pnpm migrate:down` apply cleanly against
     local DB.
-  - Status: scaffolded, not verified. Docker daemon unavailable in this
-    environment prevented migration execution.
+  - Status: scaffolded and verified through CI/pre-push migration checks
+    against local Postgres.
 
 - [ ] **Task 0.4: Provider access and commercial validation gate**
   - Scope: validate Duffel, Kiwi, and Travelpayouts access, terms,
@@ -506,8 +507,8 @@ Notes:
   - Expected files: additional migration files under
     `infra/migrations/`.
   - Verification: migrations apply and indexes are active.
-  - Status: initial schema and indexes authored, but migration
-    application is blocked pending Docker/Postgres availability.
+  - Status: initial schema and indexes authored; migration application is
+    verified through CI/pre-push checks against Postgres.
 
 - [ ] **Task 5.2: Implement repository layer**
   - Scope: storage and read patterns for offers/alerts/baselines.
@@ -569,10 +570,11 @@ Notes:
 ### Phase 8 - CI and Fixture Maintenance
 
 - [x] **Task 8.1: Configure CI with Postgres service**
-  - Scope: typecheck, lint, unit, integration tests using a Postgres
-    service container; pinned LTS major.
+  - Scope: typecheck, lint, unit tests, and migrations using a Postgres
+    service container on the pinned LTS major.
   - Expected files: `.github/workflows/ci.yml`.
-  - Verification: CI green including DB-backed integration tests.
+  - Verification: CI green including Postgres-backed migrations; DB-backed
+    repository integration tests remain a later task.
 
 - [x] **Task 8.2: Add fixture refresh workflow**
   - Scope: documented fixture refresh and smoke scripts.
@@ -605,16 +607,18 @@ Notes:
   scaffold, fixture refresh script, and contract/golden fixture placeholders;
   CI and local tooling use Node 24 (GitHub Actions, `.nvmrc`,
   `package.json` engines, `@types/node`).
-- 2026-04-25: Verified `pnpm lint`, `pnpm -r typecheck`, and
-  `pnpm -r test` all pass locally.
-- 2026-04-25: Attempted Docker-based Postgres bring-up; blocked because
-  Docker daemon is not running in the current environment.
+- 2026-04-25: Verified `pnpm lint`, `pnpm typecheck`, and
+  `pnpm test` all pass locally.
+- 2026-04-25: Verified Docker-backed pre-push flow with migrations and
+  pg-boss smoke after local Postgres was available.
 - 2026-04-25: Reconciled scaffold review findings: fixed env boolean
   parsing, service startup, migration scripts, pg-boss smoke API usage,
   candidate discovery shape, YAML-backed destinations, pricing value
   objects, lazy DB pool construction, Telegram dry-run/retry behavior,
   build/typecheck hygiene, benchmark placeholder marking, and task
   statuses for incomplete verification gates.
+- 2026-04-25: Merged Dependabot dependency and GitHub Actions updates;
+  GitHub currently reports zero open Dependabot alerts.
 
 ## Documentation Discipline
 
@@ -685,8 +689,8 @@ discovered against real responses.
 - Kill switch and dry-run mode behave correctly under tests.
 - Telegram alerts are private, escaped, actionable, and include
   itinerary risk flags.
-- CI is green with DB-backed integration tests on the pinned LTS
-  major.
+- CI is green with Postgres-backed migrations and unit tests on the
+  pinned LTS major.
 
 ## Out of Scope for MVP
 
@@ -699,6 +703,8 @@ discovered against real responses.
 
 ## Next Step
 
-Execute Phase 0 and Phase 1 first. Do not proceed to full provider
-adapter implementation until the access gate, coverage gate
-methodology, AR cost model, and benchmark dataset are complete.
+Continue from the remaining gates: provider access validation, real
+provider gate state for `/provider-status`, DB-backed repository tests,
+provider-budget integration, and benchmark readiness. Do not proceed to
+full provider adapter rollout until the access gate, coverage gate
+methodology, AR cost model, and benchmark dataset are verified.

@@ -54,6 +54,18 @@ Workflow `.github/workflows/pr-automation.yml` runs on pull requests targeting
   `skip-changelog` or other labels manually when they apply; automation only
   manages the Conventional Commit type set above.
 
+### Dependency update pull requests
+
+Dependabot opens npm and GitHub Actions update PRs from
+`.github/dependabot.yml`. For dependency-only changes:
+
+- Keep the PR focused on the generated manifest, lockfile, or workflow update.
+- Confirm `pnpm install --frozen-lockfile` succeeds after lockfile changes.
+- Use `pnpm audit` as an npm advisory cross-check only; GitHub Dependabot
+  alerts are confirmed through GitHub Security Advisories after a rescan.
+- Add the `dependencies` label manually when the change should be excluded from
+  generated release notes.
+
 ## Releases
 
 - Releases are cut from `main` with annotated tags in `vX.Y.Z` format.
@@ -72,8 +84,9 @@ Detailed release steps: `docs/10-release-process.md`.
   `.github/release.yml`).
 - Link issues in **Context** with `Fixes #123` or `Closes #123` when applicable
   so GitHub closes them on merge.
-- Add `skip-changelog` (or `dependencies`) manually when the change should be
-  excluded from generated release notes.
+- Add `skip-changelog` or `dependencies` manually when the change should be
+  excluded from generated release notes. The `ci` label is grouped under
+  Maintenance when release notes are generated.
 
 ## Pull Request Checklist
 
