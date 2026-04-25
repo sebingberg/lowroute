@@ -31,7 +31,7 @@
     "node-pg-migrate": "8.0.4",
     "pg-boss": "10.4.2",
     "tsx": "4.20.3",
-    "typescript": "5.8.3",
+    "typescript": "6.0.3",
     "vitest": "4.1.5"
   }
 }
