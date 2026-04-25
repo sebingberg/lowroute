@@ -1,6 +1,5 @@
-import PgBoss from "pg-boss";
-
 import { readEnv } from "@lowroute/config";
+import PgBoss from "pg-boss";
 
 const QUEUE = "provider-smoke";
 
