@@ -29,6 +29,9 @@ Buenos Aires origins and prepares strict, rule-driven Telegram alert flows.
 - Data + infra: PostgreSQL, migrations in `infra/migrations`, queue checks via
   `pg-boss`.
 - Verification stack: Vitest, Biome, markdownlint, Lefthook.
+- Dependency maintenance: Dependabot checks npm and GitHub Actions weekly;
+  GitHub Dependabot alerts are the source of truth for security advisory
+  closure.
 
 ## Repository Layout
 
@@ -109,6 +112,7 @@ Buenos Aires origins and prepares strict, rule-driven Telegram alert flows.
 - Individual commands.
 
   ```bash
+  pnpm install --frozen-lockfile
   pnpm lint
   pnpm typecheck
   pnpm test
@@ -160,6 +164,15 @@ Service routes are defined in `apps/service/src/index.ts`.
   ```
 
 The migration scripts rely on `DATABASE_URL` from your environment.
+
+## Dependency Maintenance
+
+Dependabot is configured in `.github/dependabot.yml` for weekly npm and
+GitHub Actions updates. For dependency PRs, keep `pnpm-lock.yaml` committed,
+verify with `pnpm install --frozen-lockfile`, and use `pnpm audit` only as an
+npm advisory cross-check. GitHub Dependabot alerts use GitHub Security
+Advisories and may close only after GitHub rescans the updated manifest and
+lockfile.
 
 ## Contributing
 

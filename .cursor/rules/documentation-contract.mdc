@@ -6,6 +6,9 @@ globs:
   - "docs/**/*.md"
   - "AGENTS.md"
   - "package.json"
+  - ".github/dependabot.yml"
+  - ".github/release.yml"
+  - ".github/workflows/*.yml"
 alwaysApply: false
 ---
 
@@ -23,6 +26,10 @@ command references.
   `docs/05-runbook-local.md`.
 - Document scaffold placeholders explicitly (for example `/provider-status`
   with `actionable: false`).
+- Keep dependency automation docs synchronized with `.github/dependabot.yml`,
+  `pnpm-lock.yaml` expectations, and GitHub Dependabot alert behavior.
+- Keep release-label guidance synchronized with `.github/release.yml` and
+  `.github/workflows/pr-automation.yml`.
 
 ## Integration Points
 
@@ -32,6 +39,9 @@ command references.
 - `apps/service/src/http/provider-status.ts` defines current provider status
   scaffold behavior.
 - `package.json` is the command source of truth.
+- `.github/dependabot.yml` owns dependency update scheduling.
+- `.github/release.yml` owns generated release-note labels and exclusions.
+- `.github/workflows/pr-automation.yml` owns automated PR type-label behavior.
 
 ## Common Pitfalls
 
@@ -40,6 +50,8 @@ command references.
 | Putting branch/release policy in `README.md` | Keep policy in `CONTRIBUTING.md` and link it |
 | Declaring scaffold routes as complete | Mark placeholders explicitly and reference current behavior |
 | Doc commands drifting from scripts | Validate every documented command against `package.json` |
+| Treating `pnpm audit` as Dependabot closure proof | Use it only as an npm advisory cross-check; GitHub alert closure is confirmed after GitHub rescans |
+| Documenting manual labels as automated | Distinguish PR automation type labels from manual labels such as `dependencies` |
 | Writing non-runnable snippets | Keep command blocks copy-pasteable as-is |
 
 ## Reference Implementation
@@ -50,3 +62,6 @@ command references.
 `docs/05-runbook-local.md`
 `apps/service/src/http/provider-status.ts`
 `package.json`
+`.github/dependabot.yml`
+`.github/release.yml`
+`.github/workflows/pr-automation.yml`

@@ -31,6 +31,12 @@
 - Exclude `**/*.test.ts` from package build output.
 - CI must use `pnpm install --frozen-lockfile`; do not weaken lockfile drift
   detection.
+- Dependabot owns weekly npm and GitHub Actions updates in
+  `.github/dependabot.yml`. Keep dependency PRs focused on manifests,
+  lockfiles, and workflow pins.
+- Treat GitHub Dependabot alerts as authoritative for GHSA closure. `pnpm audit`
+  is a useful npm advisory cross-check, but it does not prove GitHub alerts are
+  closed until GitHub rescans the updated manifest and lockfile.
 - Lefthook owns committed Git hook config in `lefthook.yml`.
 - `pre-commit` should stay Docker-free and run `pnpm precommit:fast`;
   `pre-push` may run Docker-backed checks with `pnpm precommit`.
@@ -109,6 +115,11 @@
   and `.github/pull_request_template.md`; keep those two files identical when
   editing either one (GitHub reads the `.github` path; agents resolve the
   `.cursor` path first for `/create-commit-plan --pr-description`).
+- Keep release-label docs aligned with `.github/release.yml` and
+  `.github/workflows/pr-automation.yml`; labels outside the automated
+  Conventional Commit type set, such as `dependencies`, are manual.
+- Document dependency automation changes in `CONTRIBUTING.md` or
+  `docs/05-runbook-local.md` rather than hiding them only in workflow files.
 - Documentation edits should pass markdownlint, and command snippets should be
   copy-pasteable as written.
 

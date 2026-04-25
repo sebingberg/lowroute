@@ -10,15 +10,32 @@ docker compose up -d postgres
 
 ```bash
 cp .env.example .env
-pnpm install
+pnpm install --frozen-lockfile
 pnpm migrate:up
 ```
 
 ## Verify
 
+Fast local loop without Docker-backed checks:
+
 ```bash
+pnpm precommit:fast
+```
+
+Full local gate with Postgres-backed migration and queue smoke checks:
+
+```bash
+pnpm precommit
+```
+
+Useful individual checks:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm lint
 pnpm typecheck
 pnpm test
+pnpm build
 pnpm smoke:provider
 ```
 
@@ -26,4 +43,10 @@ pnpm smoke:provider
 
 ```bash
 pnpm --filter @lowroute/service dev
+```
+
+## Smoke Check
+
+```bash
+curl -s http://localhost:3000/health
 ```
