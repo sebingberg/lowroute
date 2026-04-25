@@ -37,7 +37,7 @@ Build an MVP flight-deals bot that:
 
 ## Architecture Decisions
 
-- Runtime: current active Node LTS at scaffold time, minimum `>=22.12`.
+- Runtime: current active Node LTS at scaffold time, minimum `>=24.0`.
   Pin the selected major in `.nvmrc` and CI.
 - Workspace: `pnpm workspaces` + TypeScript project references.
 - HTTP API: `Hono`, mounted inside the worker process.
@@ -601,9 +601,10 @@ Notes:
   discovery/fetch/score/select/send.
 - 2026-04-25: Added persistence layer scaffolds (DB pool + repositories)
   and initial SQL migration files.
-- 2026-04-25: Added CI workflow (Node 22 + Postgres service), provider
-  smoke script scaffold, fixture refresh script, and contract/golden
-  fixture placeholders.
+- 2026-04-25: Added CI workflow (Postgres service), provider smoke script
+  scaffold, fixture refresh script, and contract/golden fixture placeholders;
+  CI and local tooling use Node 24 (GitHub Actions, `.nvmrc`,
+  `package.json` engines, `@types/node`).
 - 2026-04-25: Verified `pnpm lint`, `pnpm -r typecheck`, and
   `pnpm -r test` all pass locally.
 - 2026-04-25: Attempted Docker-based Postgres bring-up; blocked because
