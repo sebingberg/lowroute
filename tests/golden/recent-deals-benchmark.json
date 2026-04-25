@@ -1,0 +1,69 @@
+{
+  "placeholder": true,
+  "rows": [
+    {
+      "origin": "EZE",
+      "destination": "MAD",
+      "departure_date": "2026-09-01",
+      "return_date": "2026-09-16",
+      "trip_length_days": 15,
+      "discovered_date": "2026-04-10",
+      "source_site": "sample-source",
+      "source_url": "https://example.com/deal/1",
+      "merchant_country": "US",
+      "recorded_all_in_paid_price": 710,
+      "currency": "USD",
+      "paid_via": "foreign_card",
+      "fx_snapshot": {
+        "source": "bna",
+        "rate": 1,
+        "captured_at_utc": "2026-04-10T15:00:00.000Z"
+      },
+      "carrier": "IB",
+      "operating_carrier": "IB",
+      "self_transfer": false,
+      "separate_tickets": false,
+      "airport_changes": false,
+      "overnight_layover": false,
+      "checked_bag_included": false,
+      "carry_on_included": true,
+      "manual_search_assumptions": {
+        "max_stops": 2,
+        "max_layover_hours": 8,
+        "baggage_profile": "backpack_carryon"
+      }
+    },
+    {
+      "origin": "AEP",
+      "destination": "LIM",
+      "departure_date": "2026-08-04",
+      "return_date": "2026-08-12",
+      "trip_length_days": 8,
+      "discovered_date": "2026-04-15",
+      "source_site": "sample-source",
+      "source_url": "https://example.com/deal/2",
+      "merchant_country": "AR",
+      "recorded_all_in_paid_price": 420,
+      "currency": "USD",
+      "paid_via": "merchant_outside_ar",
+      "fx_snapshot": {
+        "source": "bna",
+        "rate": 1,
+        "captured_at_utc": "2026-04-15T13:30:00.000Z"
+      },
+      "carrier": "LA",
+      "operating_carrier": "LA",
+      "self_transfer": false,
+      "separate_tickets": false,
+      "airport_changes": false,
+      "overnight_layover": false,
+      "checked_bag_included": false,
+      "carry_on_included": true,
+      "manual_search_assumptions": {
+        "max_stops": 1,
+        "max_layover_hours": 8,
+        "baggage_profile": "backpack_carryon"
+      }
+    }
+  ]
+}

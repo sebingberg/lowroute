@@ -1,0 +1,17 @@
+{
+  "name": "@lowroute/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --pretty false --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lowroute/config": "workspace:*",
+    "yaml": "^2.8.3"
+  }
+}

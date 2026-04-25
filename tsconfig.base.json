@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@lowroute/config": ["packages/config/src/index.ts"],
+      "@lowroute/domain": ["packages/domain/src/index.ts"],
+      "@lowroute/providers": ["packages/providers/src/index.ts"],
+      "@lowroute/notifications": ["packages/notifications/src/index.ts"],
+      "@lowroute/persistence": ["packages/persistence/src/index.ts"]
+    }
+  }
+}

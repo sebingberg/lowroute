@@ -1,0 +1,23 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/config"
+    },
+    {
+      "path": "packages/domain"
+    },
+    {
+      "path": "packages/providers"
+    },
+    {
+      "path": "packages/notifications"
+    },
+    {
+      "path": "packages/persistence"
+    },
+    {
+      "path": "apps/service"
+    }
+  ]
+}
