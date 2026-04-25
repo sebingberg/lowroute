@@ -16,7 +16,12 @@ pnpm-debug.log*
 
 # OS and local editor state
 .DS_Store
+.idea/
+
+# Cursor IDE (make rules and templates visible
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
-.idea/
+!.cursor/templates/
+!.cursor/templates/**
+.cursor/plans/

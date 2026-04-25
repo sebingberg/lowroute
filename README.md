@@ -1,7 +1,7 @@
 # Lowroute
 
 [![CI](https://github.com/sebingberg/lowroute/actions/workflows/ci.yml/badge.svg)](https://github.com/sebingberg/lowroute/actions/workflows/ci.yml)
-[![Node.js >=22.12](https://img.shields.io/badge/node-%3E%3D22.12-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js >=24.0](https://img.shields.io/badge/node-%3E%3D24.0.0-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm 10.10.0](https://img.shields.io/badge/pnpm-10.10.0-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 
 Lowroute is an internal MVP service that discovers economy fare deals from
@@ -22,7 +22,7 @@ Buenos Aires origins and prepares strict, rule-driven Telegram alert flows.
 
 ## Technical Overview
 
-- Runtime: Node.js `>=22.12`, TypeScript (ESM), pnpm workspaces.
+- Runtime: Node.js `>=24.0`, TypeScript (ESM), pnpm workspaces.
 - API host: Hono in `apps/service`.
 - Core packages: `@lowroute/config`, `@lowroute/domain`,
   `@lowroute/providers`, `@lowroute/notifications`, `@lowroute/persistence`.
@@ -50,7 +50,7 @@ Buenos Aires origins and prepares strict, rule-driven Telegram alert flows.
 
 ## Prerequisites
 
-- Node.js `>=22.12` (see `.nvmrc`).
+- Node.js `>=24.0` (see `.nvmrc`).
 - `pnpm` `10.10.0`.
 - Docker (for local PostgreSQL via `docker compose`).
 
