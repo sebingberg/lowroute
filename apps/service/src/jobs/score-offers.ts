@@ -1,4 +1,4 @@
-import { type NormalizedOffer, buildScoringService } from "@lowroute/domain";
+import { buildScoringService, type NormalizedOffer } from "@lowroute/domain";
 
 export const scoreOffers = (offers: NormalizedOffer[]): NormalizedOffer[] => {
   const scoringService = buildScoringService();
