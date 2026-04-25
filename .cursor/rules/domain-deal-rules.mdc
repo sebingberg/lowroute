@@ -1,0 +1,55 @@
+---
+description: "Domain rules for flight deal eligibility, pricing, and discovery"
+globs:
+  - "packages/domain/**/*.ts"
+  - "packages/domain/data/**/*"
+  - "packages/providers/**/*.ts"
+  - "apps/service/src/jobs/**/*.ts"
+  - "tests/golden/**/*"
+alwaysApply: false
+---
+
+# Domain Deal Rules
+
+Use this rule when changing fare normalization, baseline selection,
+candidate discovery, destination data, or benchmark fixtures.
+
+## Core Pattern
+
+- Keep price data currency-safe. Use `Money` or an integer minor-unit
+  primitive instead of bare numbers in domain contracts.
+- Deal eligibility must be route-baseline-driven. Do not compare fares to
+  absolute magic constants.
+- Candidate discovery should be deterministic for an injected `now`, honor
+  origin config, and keep provider-budget pressure explicit.
+- Treat checked-in benchmark samples as non-gate data unless
+  `"placeholder": false` and Task 1.2 requirements are satisfied.
+
+## Integration Points
+
+- `packages/domain/src/entities/offer.ts` defines normalized offer contracts.
+- `packages/domain/src/services/cost-normalization-service.ts` owns FX and
+  AR-merchant exception behavior.
+- `packages/domain/src/services/alert-eligibility-service.ts` delegates to
+  `deal-baseline-service.ts`.
+- `apps/service/src/jobs/discover-candidates.ts` consumes destination and
+  origin config.
+- `tests/golden/recent-deals-benchmark.json` must be rejected by gate runners
+  while marked placeholder.
+
+## Common Pitfalls
+
+| Pitfall | Preferred handling |
+| --- | --- |
+| Leaving YAML data unused behind TS constants | Load and validate the data file |
+| Treating `merchant_outside_ar` as an AR merchant | Keep merchant country consistent with payment path |
+| Applying AR tax without an exception class | Require documented `ar_exception_class` |
+| Generating every day in the horizon by default | Use a bounded cadence or budget-aware sampler |
+
+## Reference Implementation
+
+`packages/domain/src/value-objects/money.ts`
+`packages/domain/src/services/cost-normalization-service.ts`
+`packages/domain/src/services/deal-baseline-service.ts`
+`apps/service/src/jobs/discover-candidates.ts`
+`tests/golden/recent-deals-benchmark.json`
