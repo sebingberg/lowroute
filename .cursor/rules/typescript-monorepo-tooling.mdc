@@ -1,0 +1,56 @@
+---
+description: "TypeScript monorepo tooling and verification conventions"
+globs:
+  - "package.json"
+  - "pnpm-workspace.yaml"
+  - "tsconfig*.json"
+  - "apps/**/package.json"
+  - "packages/**/package.json"
+  - "scripts/**/*.ts"
+alwaysApply: false
+---
+
+# TypeScript Monorepo Tooling
+
+Use this rule when changing workspace tooling, TypeScript config, or root
+scripts.
+
+## Core Pattern
+
+- Keep root `typecheck` no-emit. Use `tsconfig.typecheck.json` for the
+  source graph and exclude generated `dist`.
+- Keep package `build` scripts responsible for emit and package `typecheck`
+  scripts responsible for `--noEmit`.
+- Keep package `"types"` entries pointed at `dist/index.d.ts`; do not point
+  published-facing metadata at `src`.
+- Add root dev dependencies for scripts under `scripts/` when root
+  typechecking needs to resolve them.
+- Keep `pnpm precommit` as the full CI-parity routine and
+  `pnpm precommit:fast` as the Docker-free local loop.
+- Keep Lefthook config in `lefthook.yml`: pre-commit runs the fast routine,
+  pre-push runs the Docker-backed full routine.
+
+## Integration Points
+
+- `package.json` owns root verification commands.
+- `tsconfig.typecheck.json` checks `apps`, `packages`, and `scripts`.
+- `scripts/precommit.ts` owns local precommit orchestration.
+- `lefthook.yml` owns actual Git hook wiring.
+- Package `tsconfig.json` files exclude `**/*.test.ts` from emit.
+- `.github/workflows/ci.yml` must use `pnpm install --frozen-lockfile`.
+
+## Common Pitfalls
+
+| Pitfall | Preferred handling |
+| --- | --- |
+| Running `pnpm build` inside `typecheck` | Use no-emit typechecking only |
+| Pointing package `types` to `src/index.ts` | Keep `types` on `dist/index.d.ts` |
+| Letting root globs include generated declarations | Exclude `**/dist/**` |
+| Loosening CI lockfile installs | Keep frozen lockfile installs |
+
+## Reference Implementation
+
+`package.json`
+`tsconfig.typecheck.json`
+`packages/domain/tsconfig.json`
+`.github/workflows/ci.yml`

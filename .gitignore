@@ -1,6 +1,27 @@
+# Dependencies and build output
 node_modules/
 dist/
-.DS_Store
-.env
 coverage/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
 *.log
+pnpm-debug.log*
+
+# OS and local editor state
+.DS_Store
+.idea/
+
+# Cursor IDE (make rules and templates visible
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/templates/
+!.cursor/templates/**
+.cursor/plans/

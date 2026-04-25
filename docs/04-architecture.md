@@ -2,7 +2,7 @@
 
 ## Stack
 
-- Runtime: Node.js LTS `22`.
+- Runtime: Node.js `>=24.0` (see root `engines` and `.nvmrc`).
 - API: Hono.
 - Validation: Zod.
 - DB: PostgreSQL.

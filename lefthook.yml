@@ -1,0 +1,9 @@
+pre-commit:
+  commands:
+    fast-verification:
+      run: pnpm precommit:fast
+
+pre-push:
+  commands:
+    full-verification:
+      run: pnpm precommit

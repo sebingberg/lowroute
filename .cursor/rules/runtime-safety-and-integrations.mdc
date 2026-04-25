@@ -1,0 +1,64 @@
+---
+description: "Runtime safety patterns for env, HTTP, jobs, and external sends"
+globs:
+  - "apps/**/*.ts"
+  - "packages/config/**/*.ts"
+  - "packages/notifications/**/*.ts"
+  - "packages/persistence/**/*.ts"
+  - "scripts/**/*.ts"
+  - "package.json"
+alwaysApply: false
+---
+
+# Runtime Safety And Integrations
+
+Use this rule when changing runtime entrypoints, env parsing, background jobs,
+or outbound notifications.
+
+## Core Pattern
+
+- Parse boolean env vars explicitly. Never use `z.coerce.boolean()` for
+  string-backed env values because `"false"` becomes `true`.
+- Service entrypoints must both wire routes and start listening. A bootstrap
+  log without a server is not enough.
+- Use `pg-boss` job APIs for queue smoke checks: `createQueue()`, `send()`,
+  and `work()` handlers that receive job arrays.
+- External sends must have dry-run logging, timeout, bounded retry, and
+  non-2xx logging.
+- No module-level side effects in shared packages. Do not call `readEnv()`,
+  open DB pools, or instantiate clients at import time. Use a lazy factory
+  (e.g. `getPool()`) so imports stay test-safe and fork-safe.
+- `node-pg-migrate` `-d` is `--database-url-var` and takes an env-var
+  **name**, not the expanded URL. Rely on the default `DATABASE_URL`
+  lookup or pass `-d DATABASE_URL` explicitly.
+
+## Integration Points
+
+- `packages/config/src/env.ts` owns env parsing contracts.
+- `apps/service/src/index.ts` owns HTTP startup.
+- `scripts/run-provider-smoke.ts` owns the pg-boss publish/consume smoke.
+- `packages/notifications/src/telegram/telegram-notifier.ts` owns Telegram
+  delivery behavior.
+- `packages/persistence/src/db.ts` exposes the lazy `getPool()` factory.
+- `package.json` `migrate:up` / `migrate:down` show the correct
+  `node-pg-migrate` invocation.
+
+## Common Pitfalls
+
+| Pitfall | Preferred handling |
+| --- | --- |
+| Treating `"false"` as false via coercion | Use explicit `"true"`/`"false"` parsing |
+| Logging "bootstrapped" without listening | Verify `/health` responds locally |
+| Using `publish()` to enqueue pg-boss jobs | Use `send()` after `createQueue()` |
+| Swallowing dry-run alerts | Log the rendered payload |
+| Eager `new Pool()` or `readEnv()` at import | Use a lazy `getPool()` factory |
+| `node-pg-migrate -d $DATABASE_URL` | Rely on default lookup or `-d DATABASE_URL` |
+
+## Reference Implementation
+
+`packages/config/src/env.ts`
+`apps/service/src/index.ts`
+`scripts/run-provider-smoke.ts`
+`packages/notifications/src/telegram/telegram-notifier.ts`
+`packages/persistence/src/db.ts`
+`package.json`

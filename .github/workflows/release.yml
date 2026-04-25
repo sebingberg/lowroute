@@ -1,12 +1,15 @@
-name: CI
+name: Release
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  test:
+  publish:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -29,6 +32,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag format
+        run: |
+          if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag ${GITHUB_REF_NAME} is not strict SemVer (vMAJOR.MINOR.PATCH)."
+            exit 1
+          fi
+
+      - name: Verify tag points to main HEAD
+        run: |
+          git fetch origin main --depth=1
+          main_sha="$(git rev-parse origin/main)"
+          tag_sha="${GITHUB_SHA}"
+          if [[ "${tag_sha}" != "${main_sha}" ]]; then
+            echo "Tagged commit is ${tag_sha}, but origin/main is ${main_sha}."
+            echo "Only tags pointing at the latest origin/main commit are releasable."
+            exit 1
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v5
@@ -55,3 +78,11 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
