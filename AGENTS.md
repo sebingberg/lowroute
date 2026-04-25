@@ -2,7 +2,7 @@
 
 ## Project Shape
 
-- Runtime: Node.js `>=22.12`, TypeScript ESM, pnpm workspaces.
+- Runtime: Node.js `>=24.0`, TypeScript ESM, pnpm workspaces.
 - App: `apps/service` runs a Hono HTTP API inside the worker process.
 - Packages: `config`, `domain`, `providers`, `notifications`, and
   `persistence`.
@@ -105,6 +105,10 @@
   be documented as incomplete.
 - Command examples in docs must match real scripts in `package.json` and local
   runbook flows in `docs/05-runbook-local.md`.
+- Pull request bodies use the same structure in `.cursor/templates/pr-template.md`
+  and `.github/pull_request_template.md`; keep those two files identical when
+  editing either one (GitHub reads the `.github` path; agents resolve the
+  `.cursor` path first for `/create-commit-plan --pr-description`).
 - Documentation edits should pass markdownlint, and command snippets should be
   copy-pasteable as written.
 

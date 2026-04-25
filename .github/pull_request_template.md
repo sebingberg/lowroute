@@ -1,31 +1,22 @@
-## What changed
+<!-- Keep this file identical to `.cursor/templates/pr-template.md` (agent override / create-commit-plan). -->
+
+<!-- Fill the PR title field with Conventional Commits, for example `feat(api): short description`. CI syncs type labels from the title. -->
+
+## Context
 
 -
 
-## Why
+## Changes
+
+- **<area>**: what changed and why it matters
+- **<area>**: what changed and why it matters
+
+## Test Plan
+
+- [ ] `pnpm lint` — CI
+- [ ] `pnpm typecheck` — CI
+- [ ] `pnpm test` — CI
+
+## Reviewer Notes
 
 -
-
-## Release impact
-
-- [ ] major
-- [ ] minor
-- [ ] patch
-- [ ] none
-
-## Labels
-
-- [ ] `feat`
-- [ ] `fix`
-- [ ] `chore`
-- [ ] `docs`
-- [ ] `test`
-- [ ] `refactor`
-- [ ] `skip-changelog` (if this should be excluded from release notes)
-
-## Verification
-
-- [ ] `pnpm lint`
-- [ ] `pnpm typecheck`
-- [ ] `pnpm test`
-- [ ] `pnpm precommit` (or `pnpm precommit:fast` with reason)

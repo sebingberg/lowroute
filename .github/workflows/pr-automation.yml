@@ -1,0 +1,145 @@
+name: PR automation
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+    branches: [main]
+
+concurrency:
+  group: pr-automation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  assign-author:
+    name: Assign PR author
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.action == 'opened' || github.event.action == 'reopened')
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.payload.pull_request.number;
+            const author = context.payload.pull_request.user.login;
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              assignees: [author],
+            });
+
+  sync-type-labels:
+    name: Sync Conventional Commit type labels
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.payload.pull_request.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = context.payload.pull_request.title;
+            const headRef = context.payload.pull_request.head.ref ?? "";
+
+            const MANAGED = [
+              "feat",
+              "fix",
+              "refactor",
+              "chore",
+              "docs",
+              "test",
+              "perf",
+            ];
+
+            const LABEL_COLORS = {
+              feat: "0e8a16",
+              fix: "d93f0b",
+              chore: "fef2c0",
+              docs: "0075ca",
+              test: "d4c5f9",
+              refactor: "fbca04",
+              perf: "5319e7",
+            };
+
+            function parseTypeFromTitle(t) {
+              const scoped = t.match(
+                /^(feat|fix|refactor|chore|docs|test|perf)(\([^)]+\))?:/i,
+              );
+              if (scoped) return scoped[1].toLowerCase();
+              const plain = t.match(/^(feat|fix|refactor|chore|docs|test|perf):/i);
+              if (plain) return plain[1].toLowerCase();
+              return null;
+            }
+
+            function parseTypeFromBranch(ref) {
+              const m = ref.match(/^(feat|fix|chore|docs|test|refactor|perf)\//i);
+              return m ? m[1].toLowerCase() : null;
+            }
+
+            let typeLabel =
+              parseTypeFromTitle(title) ?? parseTypeFromBranch(headRef);
+
+            const { data: issue } = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number,
+            });
+            const current = issue.labels.map((l) =>
+              typeof l === "string" ? l : l.name,
+            );
+
+            for (const name of current) {
+              if (MANAGED.includes(name) && name !== typeLabel) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number,
+                    name,
+                  });
+                } catch (e) {
+                  console.log(`removeLabel ${name}:`, e);
+                }
+              }
+            }
+
+            if (!typeLabel) {
+              console.log(
+                "No Conventional Commit type in title or branch prefix; labels unchanged.",
+              );
+              return;
+            }
+
+            async function ensureLabel(name) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name,
+                    color: LABEL_COLORS[name] ?? "cccccc",
+                    description: "Managed by PR automation (see CONTRIBUTING.md)",
+                  });
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            await ensureLabel(typeLabel);
+            if (!current.includes(typeLabel)) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: [typeLabel],
+              });
+            }
