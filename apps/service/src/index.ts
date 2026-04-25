@@ -1,8 +1,7 @@
 import { serve } from "@hono/node-server";
+import { readEnv } from "@lowroute/config";
 import { Hono } from "hono";
 import { pino } from "pino";
-
-import { readEnv } from "@lowroute/config";
 
 import { alertsHandler } from "./http/alerts.js";
 import { healthHandler } from "./http/health.js";

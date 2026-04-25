@@ -1,7 +1,7 @@
 import {
   type BaselineStats,
-  type NormalizedOffer,
   buildAlertEligibilityService,
+  type NormalizedOffer,
 } from "@lowroute/domain";
 
 export const selectDeals = (

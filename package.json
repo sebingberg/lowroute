@@ -23,7 +23,7 @@
     "refresh:fixtures": "tsx scripts/refresh-provider-fixtures.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.4.13",
     "@types/node": "24.10.1",
     "@types/pg": "8.15.2",
     "lefthook": "^2.1.6",
