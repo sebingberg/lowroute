@@ -20,6 +20,6 @@
     "@lowroute/providers": "workspace:*",
     "hono": "4.12.15",
     "pg-boss": "10.4.2",
-    "pino": "9.7.0"
+    "pino": "10.3.1"
   }
 }
