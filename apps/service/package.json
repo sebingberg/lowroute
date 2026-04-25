@@ -18,7 +18,7 @@
     "@lowroute/notifications": "workspace:*",
     "@lowroute/persistence": "workspace:*",
     "@lowroute/providers": "workspace:*",
-    "hono": "4.7.8",
+    "hono": "4.12.15",
     "pg-boss": "10.4.2",
     "pino": "9.7.0"
   }

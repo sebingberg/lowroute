@@ -1,4 +1,4 @@
-<!-- Keep this file identical to `.cursor/templates/pr-template.md` (agent override / create-commit-plan). -->
+<!-- Keep this file identical to `.github/pull_request_template.md` (GitHub default PR body). -->
 
 <!-- Fill the PR title field with Conventional Commits, for example `feat(api): short description`. CI syncs type labels from the title. -->
 
