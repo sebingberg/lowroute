@@ -1,0 +1,75 @@
+---
+description: "Recent-deals benchmark JSON: scaffold vs gate-ready validation"
+globs:
+  - "tests/golden/**/*.json"
+  - "packages/domain/src/benchmark/**/*.ts"
+  - "scripts/validate-recent-deals-benchmark.ts"
+alwaysApply: false
+---
+
+# Recent-Deals Benchmark Golden Dataset
+
+Use this rule when editing `tests/golden/recent-deals-benchmark.json`, benchmark
+validators, or the gate script. Keep scaffold samples structurally valid while
+`placeholder` is true. Treat gate readiness as a separate, stricter bar.
+
+## Validation Modes
+
+- `validateBenchmarkScaffold(raw)` in
+  `packages/domain/src/benchmark/recent-deals-benchmark-validation.ts`
+  checks root keys (`placeholder`, `rows` only), row shape, nested objects,
+  enums, and formats. Placeholder datasets must still pass so CI catches typos
+  early.
+- `validateBenchmarkGateReady(raw, options?)` runs scaffold validation, then
+  enforces coverage gate rules. It returns `ok: false` when `placeholder` is
+  `true` with an explicit Task 1.2 style message.
+
+## Gate-Ready Requirements
+
+Gate-ready means all of the following, in addition to scaffold shape:
+
+- `placeholder` must be `false`. `"placeholder": true` is intentionally not
+  gate-ready even if rows look realistic.
+- Between 20 and 30 rows inclusive (`GATE_MIN_ROWS` / `GATE_MAX_ROWS` in the
+  validator implementation).
+- Each `discovered_date` must be a valid `YYYY-MM-DD` calendar date in UTC,
+  within the last 90 days relative to validation time (`now`, defaulting to
+  runtime `Date`), not in the future.
+- Each `source_url` must parse as HTTPS. Hostnames must not match blocked
+  reserved or private ranges (including `example.*`, `localhost`, loopback,
+  RFC1918-style IPv4, documented IPv6 documentation and ULA prefixes, and
+  similar cases implemented in `findBlockedUrlHostname`).
+- String fields across each row are scanned for PII-shaped email tokens,
+  including percent-encoded and nested JSON string values (see
+  `collectJsonStrings`, `decodeURIComponent`, and
+  `decodeValidPercentTriplets` in the reference implementation).
+- `source_site` must not be the scaffold sentinel `sample-source`.
+
+## Command
+
+- Run `pnpm benchmark:gate` from the repo root. It executes
+  `tsx scripts/validate-recent-deals-benchmark.ts`, which reads
+  `tests/golden/recent-deals-benchmark.json` and calls
+  `validateBenchmarkGateReady`. Non-zero exit means the file is not gate-ready.
+
+## Pitfalls
+
+- Fixing row shape while leaving `placeholder: true` still fails the gate.
+  Update docs and plan status only after the gate passes.
+- `discovered_date` lookback is tied to validation `now`. Tests may inject
+  `options.now` so snapshots stay stable; the CLI uses real wall clock.
+- `source_url` must be `https:` only; `http:` is rejected even for public hosts.
+- Email-like tokens can hide under encoding (`%40`, double-encoded `%2540`).
+  Prefer neutral placeholders in narrative fields.
+- Extra keys on the root object or on rows fail scaffold validation before any
+  gate-specific checks run.
+
+## Reference Implementation Paths
+
+- `packages/domain/src/benchmark/recent-deals-benchmark-validation.ts`:
+  `validateBenchmarkScaffold`, `validateBenchmarkGateReady`, URL and PII
+  helpers.
+- `packages/domain/src/benchmark/recent-deals-benchmark-validation.test.ts`:
+  unit coverage for both modes.
+- `scripts/validate-recent-deals-benchmark.ts`: production gate entrypoint
+  wired to `pnpm benchmark:gate`.
