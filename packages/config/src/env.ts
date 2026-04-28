@@ -53,6 +53,7 @@ const envSchema = z.object({
   TELEGRAM_CHAT_ID: z.string().default(""),
   TELEGRAM_ALERTS_ENABLED: booleanEnv(false),
   ALERT_DRY_RUN: booleanEnv(true),
+  ALERT_COOLDOWN_HOURS: z.coerce.number().int().positive().default(24),
   DEFAULT_PAYMENT_PATH: z
     .enum(["foreign_card", "ar_card", "merchant_outside_ar"])
     .default("foreign_card"),
