@@ -473,7 +473,8 @@ Notes:
   - Scope: historical/trend retrieval for baseline service.
   - Expected files: `packages/providers/src/travelpayouts/*`.
   - Verification: baseline parser tests.
-  - Status: adapter scaffolded; baseline parser tests still pending.
+  - Status: history/trend JSON parsers and unit tests in place; live API
+    retrieval and persistence wiring remain pending.
 
 ### Phase 4 - Deal Baseline, Scoring, and Selection
 
@@ -581,6 +582,8 @@ Notes:
   - Expected files: `scripts/refresh-provider-fixtures.ts`,
     `docs/08-fixture-refresh-policy.md`.
   - Verification: refresh flow runs and updates fixtures consistently.
+  - Status: this worktree preserves offline Travelpayouts history/trend
+    samples during fixture refresh and formats generated fixture JSON.
 
 ## Implementation Log
 
@@ -619,6 +622,10 @@ Notes:
   statuses for incomplete verification gates.
 - 2026-04-25: Merged Dependabot dependency and GitHub Actions updates;
   GitHub currently reports zero open Dependabot alerts.
+- 2026-04-28: Expanded the Travelpayouts baseline adapter with
+  history/trend payload parsers, stricter alphabetic IATA validation,
+  parser tests, and fixture refresh preservation for offline contract
+  samples.
 
 ## Documentation Discipline
 

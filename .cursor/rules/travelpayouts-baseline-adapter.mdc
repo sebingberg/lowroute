@@ -1,0 +1,94 @@
+---
+description: "Travelpayouts history/trend JSON to route baseline parsing"
+globs:
+  - "packages/providers/src/travelpayouts/**/*.ts"
+  - "scripts/refresh-provider-fixtures.ts"
+alwaysApply: false
+---
+
+# Travelpayouts Baseline Adapter
+
+Use this rule when changing Travelpayouts history or trend JSON parsing,
+baseline stats mapping, or contract fixtures for those parsers.
+
+## Accepted Payload Shapes
+
+### History (`parseTravelpayoutsHistoryPayload`)
+
+- **Provider envelope**: object with `success: true`, optional root
+  `origin` / `destination`, and `data` containing nested records that expose
+  `price` (recursive walk collects every object that has `price`).
+- **Helper shape**: object with `origin`, `destination`, and `prices` as a
+  finite array of positive numbers (no `data` envelope required).
+
+### Trend (`parseTravelpayoutsTrendPayload`)
+
+- **Provider envelope**: object with `success: true`, optional root route
+  fields, and `data` (or nested structure) where collected rows expose
+  `value` as the price sample.
+- **Helper shape**: object with `origin`, `destination`, and `points` as an
+  array of objects each carrying a positive finite `price`.
+
+## `success` Flag
+
+- If a payload object includes `success`, it must be exactly `true`.
+- Envelope parsing (`resolveEnvelopeRecords`) requires `success === true`;
+  helper shapes use `rejectFailedSuccessFlag` so a present `false` still fails.
+
+## Percentiles And Median
+
+- **p20**: sort samples ascending, then linear interpolation at position
+  `(n - 1) * 0.2` where `n` is the sample count (same as percentile `0.2` in
+  `interpolateSortedPercentile`).
+- **Median**: implemented explicitly in `summarizePriceSamples`, not via the
+  percentile helper. Odd `n`: middle element. Even `n`: average of the two
+  central elements (`mid` and `mid + 1` after `mid = floor((n - 1) / 2)`).
+
+## IATA And Route Consistency
+
+- Codes must match `/^[A-Za-z]{3}$/` and are normalized to **uppercase**
+  three-letter IATA.
+- Route may come from the payload root and/or each data row; if both specify
+  a code for the same leg, row values must match the root. All rows must
+  resolve to a single origin and single destination.
+
+## Price Samples
+
+- Every sampled price must be a **finite** number and **strictly greater than
+  zero** (`readFinitePrice`). Empty samples throw.
+
+## `toBaselineStats`
+
+- Maps `TravelpayoutsRouteBaseline` to domain `BaselineStats`:
+  `route_key` is `${origin}-${destination}`; `p20` and `median` are
+  `Money.fromDecimal(..., "USD")`; `sample_size` passes through.
+
+## Recursive Envelope `data`
+
+- `collectEnvelopeRecords` walks arrays and nested objects; it pushes any
+  object that already contains the target field (`price` for history, `value`
+  for trend) and otherwise recurses into values. Deep or oddly shaped trees
+  still must yield at least one price row.
+
+## Fixture Refresh Coupling
+
+- `scripts/refresh-provider-fixtures.ts` writes `history_ok` and `trend_ok`
+  samples into `tests/contract/travelpayouts.fixtures.json` and documents the
+  link to `baseline-adapter.ts`. Keep envelope shapes, success flags, and
+  positive prices aligned with parser expectations; after changing fixtures,
+  run parser tests and refresh script output together.
+
+## Pitfalls
+
+- Treating missing `success` as success in envelope mode: full envelope path
+  requires `success === true` when using `data`.
+- Mixing history `price` with trend `value` field names across endpoints.
+- Assuming median equals a percentile helper for even-sized samples.
+- Allowing zero, negative, NaN, or infinite prices in fixtures or live JSON.
+- Drifting fixture routes or prices without updating
+  `baseline-adapter.test.ts` expectations.
+
+## Reference Implementation
+
+- `packages/providers/src/travelpayouts/baseline-adapter.ts`
+- `packages/providers/src/travelpayouts/baseline-adapter.test.ts`
