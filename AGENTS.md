@@ -73,9 +73,13 @@
 - Travel rules must honor configured values such as `MAX_LAYOVER_HOURS`.
 - Destination data is checked-in YAML under `packages/domain/data`; do not
   replace it with hardcoded TypeScript constants.
-- Candidate discovery must be deterministic for an injected `now`, honor
-  `ALLOWED_ORIGINS` and `ENABLE_EPA`, and keep provider-budget pressure
-  explicit.
+- Candidate discovery must use a deterministic injected `now`, honor
+  `ALLOWED_ORIGINS`, and when `ENABLE_EPA` is false exclude `EPA` from
+  eligible origins. Build candidates in stable order (horizon, then
+  destinations, then origins) before applying the shared per-run cap, which is
+  the minimum of `DUFFEL_REQ_LIMIT_PER_RUN`, `KIWI_REQ_LIMIT_PER_RUN`, and
+  `TRAVELPAYOUTS_REQ_LIMIT_PER_RUN`. `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR`
+  `skip` keeps the earliest slice; `defer` keeps the latest tail slice.
 
 ## Data And Gate Status
 
