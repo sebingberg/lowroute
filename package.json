@@ -20,7 +20,8 @@
     "migrate:up": "node-pg-migrate up -m infra/migrations",
     "migrate:down": "node-pg-migrate down -m infra/migrations",
     "smoke:provider": "tsx scripts/run-provider-smoke.ts",
-    "refresh:fixtures": "tsx scripts/refresh-provider-fixtures.ts"
+    "refresh:fixtures": "tsx scripts/refresh-provider-fixtures.ts",
+    "benchmark:gate": "tsx scripts/validate-recent-deals-benchmark.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.13",
