@@ -495,8 +495,10 @@ Notes:
   - Expected files: `alert-eligibility-service.ts`,
     `docs/03-alert-policy.md`.
   - Verification: alert/no-alert decision tests pass.
-  - Status: baseline-driven eligibility is scaffolded; cooldown and
-    persistence-backed suppression remain pending.
+  - Status: baseline-driven eligibility now has delivery-time cooldown
+    checks in this worktree via `shouldAlertForDelivery`,
+    `ALERT_COOLDOWN_HOURS`, and repository-backed `sent_alerts`
+    suppression. DB-backed integration coverage remains pending.
 
 ### Phase 5 - Persistence and Idempotency
 
@@ -515,7 +517,8 @@ Notes:
   - Expected files: `packages/persistence/src/repositories/*`.
   - Verification: integration tests against local Postgres.
   - Status: repository scaffolds implemented; DB-backed integration
-    tests still pending.
+    tests still pending. This worktree updates alert resend recording and
+    offer fingerprint persistence behavior.
 
 - [ ] **Task 5.3: Implement dedup and cooldown**
   - Scope: fingerprint composition and suppression windows.
@@ -523,6 +526,10 @@ Notes:
   - Verification: idempotency tests are green.
   - Notes: fingerprint composition documented in
     `docs/03-alert-policy.md`.
+  - Status: versioned offer and alert fingerprint composition,
+    persisted suppression windows, and successful-send recording are
+    implemented in this worktree; Postgres integration validation remains
+    pending.
 
 ### Phase 6 - Worker Pipeline
 
@@ -539,8 +546,9 @@ Notes:
   - Expected files: all job files under `apps/service/src/jobs/`.
   - Verification: end-to-end local run completes repeatedly in
     dry-run mode.
-  - Status: job flow skeleton implemented; queue orchestration and
-    retry semantics still pending.
+  - Status: job flow skeleton implemented; this worktree advances
+    `selectDeals` and `sendAlerts` with cooldown selection and post-send
+    persistence, but queue orchestration and retry semantics remain pending.
 
 - [ ] **Task 6.3: Add failure controls**
   - Scope: backoff, dead letters, replay strategy.
@@ -619,6 +627,10 @@ Notes:
   statuses for incomplete verification gates.
 - 2026-04-25: Merged Dependabot dependency and GitHub Actions updates;
   GitHub currently reports zero open Dependabot alerts.
+- 2026-04-28: Added versioned alert/offer fingerprint helpers,
+  `ALERT_COOLDOWN_HOURS`, cooldown-aware delivery eligibility,
+  repository-backed duplicate suppression, and successful-send persistence
+  for `sent_alerts`.
 
 ## Documentation Discipline
 
