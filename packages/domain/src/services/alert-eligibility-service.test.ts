@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { NormalizedOffer } from "../entities/offer.js";
 import { Money } from "../value-objects/money.js";
 import { buildAlertEligibilityService } from "./alert-eligibility-service.js";
+import {
+  buildAlertFingerprint,
+  buildOfferFingerprint,
+  DEFAULT_ALERT_TEMPLATE_VERSION,
+} from "./alert-fingerprints.js";
 import type { BaselineStats } from "./deal-baseline-service.js";
 
 const offer: NormalizedOffer = {
@@ -59,5 +64,58 @@ describe("alert eligibility", () => {
     });
 
     expect(service.shouldAlert(offer, null)).toBe(false);
+  });
+
+  it("suppresses delivery when fingerprint was sent within cooldown", async () => {
+    const service = buildAlertEligibilityService({
+      DEAL_PERCENTILE_THRESHOLD: 0.2,
+      DEAL_DISCOUNT_PCT: undefined,
+    });
+
+    const suppressed = await service.shouldAlertForDelivery(offer, baseline, {
+      telegramChatId: "-100",
+      alertCooldownHours: 6,
+      wasSentRecently: async () => true,
+    });
+
+    expect(suppressed).toBe(false);
+  });
+
+  it("allows delivery when baseline passes and fingerprint is outside cooldown", async () => {
+    const service = buildAlertEligibilityService({
+      DEAL_PERCENTILE_THRESHOLD: 0.2,
+      DEAL_DISCOUNT_PCT: undefined,
+    });
+    const wasSentRecently = vi.fn().mockResolvedValue(false);
+
+    const allowed = await service.shouldAlertForDelivery(offer, baseline, {
+      telegramChatId: "-100",
+      alertCooldownHours: 6,
+      wasSentRecently,
+    });
+
+    const expectedAlertFingerprint = buildAlertFingerprint(
+      buildOfferFingerprint(offer),
+      "-100",
+      DEFAULT_ALERT_TEMPLATE_VERSION,
+    );
+
+    expect(allowed).toBe(true);
+    expect(wasSentRecently).toHaveBeenCalledWith(expectedAlertFingerprint, 6);
+  });
+
+  it("does not deliver without a baseline", async () => {
+    const service = buildAlertEligibilityService({
+      DEAL_PERCENTILE_THRESHOLD: 0.2,
+      DEAL_DISCOUNT_PCT: undefined,
+    });
+
+    const out = await service.shouldAlertForDelivery(offer, null, {
+      telegramChatId: "-100",
+      alertCooldownHours: 6,
+      wasSentRecently: async () => false,
+    });
+
+    expect(out).toBe(false);
   });
 });

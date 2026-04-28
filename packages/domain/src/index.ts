@@ -3,6 +3,7 @@ export * from "./entities/offer.js";
 export * from "./entities/search-profile.js";
 export * from "./formatters.js";
 export * from "./services/alert-eligibility-service.js";
+export * from "./services/alert-fingerprints.js";
 export * from "./services/cost-normalization-service.js";
 export * from "./services/deal-baseline-service.js";
 export * from "./services/scoring-service.js";
