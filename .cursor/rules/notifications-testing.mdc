@@ -1,0 +1,87 @@
+---
+description: "Vitest patterns for @lowroute/notifications (workspace aliases, fetch mocks)"
+globs:
+  - "packages/notifications/**/*.ts"
+alwaysApply: false
+---
+
+# Notifications Package Testing
+
+Use this rule when adding or changing Vitest specs under
+`packages/notifications`.
+
+## Vitest resolve aliases
+
+- Keep `packages/notifications/vitest.config.ts` as the single place that
+  maps workspace packages to sibling source entry points.
+- Use `resolve.alias` so `@lowroute/config` and `@lowroute/domain` resolve
+  to `../config/src/index.ts` and `../domain/src/index.ts` (via
+  `fileURLToPath` and `import.meta.url`).
+- Goal: `pnpm --filter @lowroute/notifications test` runs without building
+  `config` or `domain` first.
+
+## Env and `buildTelegramNotifier`
+
+- Construct a full `Env` object with `readEnv` from a plain object shaped
+  like `NodeJS.ProcessEnv`, not from mutable `process.env` unless you reset
+  it after each test.
+- Pass that object as `options.env` into `buildTelegramNotifier` so behavior
+  is explicit and isolated.
+- Remember defaults from `readEnv`: `TELEGRAM_ALERTS_ENABLED` is `false`,
+  `ALERT_DRY_RUN` is `true`, and empty strings are valid for token and chat
+  id fields when you only exercise dry-run paths.
+
+## Mocking `fetch`
+
+- Save `const originalFetch = globalThis.fetch` in `beforeEach` or at
+  module scope, assign a `vi.fn` (or stub) to `globalThis.fetch`, and
+  restore the original in `afterEach` so other tests and Vitest workers do
+  not inherit a broken global.
+- For the live-send branch, return a `Response` with controlled `ok`,
+  `status`, and `text()` so warning logs and retry loops are deterministic.
+
+## Dry run and kill switch
+
+- When `env.ALERT_DRY_RUN` is true or `env.TELEGRAM_ALERTS_ENABLED` is false,
+  `sendDealAlert` must log via the injected logger and return `false`
+  without calling `fetch`.
+- Specs should assert logger calls and absence of `fetch` when exercising
+  those paths.
+
+## Live send path and env
+
+- Live sends require `TELEGRAM_ALERTS_ENABLED: true`, `ALERT_DRY_RUN: false`,
+  non-empty `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` consistent with
+  real Telegram usage only in explicit integration or manual checks; unit
+  tests should keep the global `fetch` mocked.
+
+## Retries, attempts, and logs
+
+- Default `retryCount` is `2`, so the implementation uses attempts `0`
+  through `retryCount` inclusive (three tries when default).
+- On non-2xx responses, the code logs `attempt`, `status`, and
+  `responseText`; on thrown errors it logs `attempt` and `error`.
+- Tests can drive failure then success to confirm the loop and final return
+  value (`true` only after `response.ok`).
+
+## Integration points
+
+- `readEnv` lives in `@lowroute/config`; types and fixtures for offers come
+  from `@lowroute/domain`.
+- `buildTelegramNotifier` is the public factory; prefer testing through it
+  rather than reaching into private formatters unless a unit is exported.
+
+## Pitfalls
+
+- Omitting Vitest aliases causes resolution against package `main`/`types`
+  (`dist`), which fails if dependencies are not built.
+- Mutating `process.env` without cleanup leaks settings across files when
+  Vitest runs tests in parallel.
+- Forgetting to restore `globalThis.fetch` breaks unrelated specs.
+- Assuming two attempts when asserting call counts; match the inclusive
+  `attempt <= retryCount` loop.
+
+## Reference implementation
+
+- Alias wiring: `packages/notifications/vitest.config.ts`
+- Notifier behavior: `packages/notifications/src/telegram/telegram-notifier.ts`
