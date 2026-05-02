@@ -530,8 +530,10 @@ Notes:
   - Scope: deterministic generation from destination/date universe.
   - Expected files: `apps/service/src/jobs/discover-candidates.ts`.
   - Verification: run output stable for fixed seed/time.
-  - Status: dated deterministic candidates are implemented; provider
-    budget integration remains pending.
+  - Status: deterministic candidates honor origin/EPA flags, per-run
+    provider budgets (`min` across Duffel/Kiwi/Travelpayouts), and
+    `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR` (`skip` prefix / `defer` suffix);
+    worker job wiring remains pending.
 
 - [ ] **Task 6.2: Implement fetch/score/select/send pipeline**
   - Scope: `pg-boss` queues and retries; respect dry-run and kill
@@ -621,6 +623,10 @@ Notes:
   statuses for incomplete verification gates.
 - 2026-04-25: Merged Dependabot dependency and GitHub Actions updates;
   GitHub currently reports zero open Dependabot alerts.
+- 2026-04-28: Integrated provider-budget pressure into candidate discovery:
+  per-run output is capped by the lowest Phase 1 provider run limit, with
+  deterministic `skip`/`defer` overflow behavior and tests for cap
+  stability, multi-origin distribution, and ambient env isolation.
 - 2026-04-28: Added `@lowroute/notifications` Vitest coverage for Telegram
   dry-run, kill switch, outbound timeout wiring, bounded retry, non-2xx
   logging, and transport-error paths; Task 7.1 verification note updated
