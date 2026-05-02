@@ -6,6 +6,10 @@
 - App: `apps/service` runs a Hono HTTP API inside the worker process.
 - Packages: `config`, `domain`, `providers`, `notifications`, and
   `persistence`.
+- `packages/notifications` uses `packages/notifications/vitest.config.ts` to
+  alias `@lowroute/config` and `@lowroute/domain` to sibling `src` entry
+  points so `pnpm --filter @lowroute/notifications test` does not require
+  building those packages first.
 - Database: PostgreSQL migrations live under `infra/migrations`.
 - Tests: Vitest unit tests are co-located with source as `*.test.ts`.
 
