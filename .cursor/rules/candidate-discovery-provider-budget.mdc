@@ -1,0 +1,68 @@
+---
+description: "candidate discovery caps and deterministic ordering vs provider budgets"
+globs:
+  - "apps/service/src/jobs/discover-candidates.ts"
+  - "apps/service/src/jobs/discover-candidates.test.ts"
+  - "packages/config/src/env.ts"
+alwaysApply: false
+---
+
+# Candidate Discovery And Provider Budget
+
+Use this rule when changing env limits, origin filtering, or budget slicing for
+`discoverCandidates`.
+
+## Model
+
+- One `Candidate` is one outbound search request **per provider** at fetch
+  time (shared cap across providers).
+
+## Per-run cap
+
+- Total candidates per discovery run cannot exceed the minimum of
+  `DUFFEL_REQ_LIMIT_PER_RUN`, `KIWI_REQ_LIMIT_PER_RUN`, and
+  `TRAVELPAYOUTS_REQ_LIMIT_PER_RUN`.
+
+## Deterministic ordering (before capping)
+
+- Pass `now` (or rely on `new Date()` in production) so horizon dates are
+  stable for tests and replays.
+- Build the full ordered list as nested iteration: **horizon offset days**
+  (from `DISCOVERY_DATE_HORIZON_DAYS` and `DISCOVERY_DATE_STEP_DAYS`), then
+  **destination** order from checked-in domain data, then **origin** order
+  from `allowedOrigins`.
+- Apply `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR` only after this order is fixed.
+
+## Origin filtering
+
+- `ALLOWED_ORIGINS` supplies the origin airport codes.
+- When `ENABLE_EPA` is false, drop `EPA` from that list (deduplicated set).
+
+## Overflow behavior
+
+- `skip`: keep the **first** `N` candidates (earliest in the stable order).
+- `defer`: keep the **last** `N` candidates (latest tail slice).
+
+## Env merging (`readEnv`)
+
+- `discoverCandidates` merges `options.env` with `process.env` via
+  `readEnv({ ...process.env, ...(env ?? {}) })`.
+- Partial overrides in tests must still satisfy schema constraints once
+  merged; unset keys fall through to real environment values.
+
+## Reference paths
+
+- `apps/service/src/jobs/discover-candidates.ts` implements ordering, cap, and
+  overflow.
+- `apps/service/src/jobs/discover-candidates.test.ts` locks behavior.
+- `packages/config/src/env.ts` defines limits, `ENABLE_EPA`, and
+  `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR`.
+
+## Pitfalls
+
+- Changing iteration order (horizon, destination, origin) changes which
+  candidates survive `skip` vs `defer` for the same budget.
+- Raising one provider limit alone does not raise the cap; the minimum still
+  binds.
+- Forgetting that `readEnv` merges with `process.env` can make tests depend on
+  the developer machine's environment.

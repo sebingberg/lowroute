@@ -24,8 +24,8 @@ command references.
   contributor policy.
 - Keep command snippets synchronized with `package.json` and
   `docs/05-runbook-local.md`.
-- Document scaffold placeholders explicitly (for example `/provider-status`
-  with `actionable: false`).
+- Document scaffold placeholders explicitly (for example `/offers` returning
+  no deals until wired).
 - Keep dependency automation docs synchronized with `.github/dependabot.yml`,
   `pnpm-lock.yaml` expectations, and GitHub Dependabot alert behavior.
 - Keep release-label guidance synchronized with `.github/release.yml` and
@@ -36,8 +36,8 @@ command references.
 - `README.md` is the internal technical entry point.
 - `CONTRIBUTING.md` is the contributor policy source.
 - `docs/05-runbook-local.md` is the local operational sequence.
-- `apps/service/src/http/provider-status.ts` defines current provider status
-  scaffold behavior.
+- `apps/service/src/http/provider-status.ts` serves `GET /provider-status` from
+  checked-in `packages/domain/data/provider-gates.yaml`.
 - `package.json` is the command source of truth.
 - `.github/dependabot.yml` owns dependency update scheduling.
 - `.github/release.yml` owns generated release-note labels and exclusions.
