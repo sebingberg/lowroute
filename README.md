@@ -146,8 +146,10 @@ Service routes are defined in `apps/service/src/index.ts`.
 - `GET /health`: runtime health payload (`status`, `service`, `now_utc`).
 - `GET /offers`: scaffold payload (`offers: []`, `count: 0`).
 - `GET /alerts`: scaffold payload (`alerts: []`, `count: 0`).
-- `GET /provider-status`: scaffold payload with `actionable: false` until
-  provider gate state is wired to real data.
+- `GET /provider-status`: reads `packages/domain/data/provider-gates.yaml`
+  (`actionable` when documentation gates are pending/rejected). Task 0.4
+  external validation is reported separately in the JSON payload and remains
+  incomplete until explicitly marked in that file.
 
 ## Database and Migrations
 

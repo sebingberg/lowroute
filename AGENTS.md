@@ -112,9 +112,15 @@
 
 - `tests/golden/recent-deals-benchmark.json` is not gate-ready while
   `"placeholder": true`.
-- `/provider-status` is scaffold-only while it returns
-  `actionable: false`; do not mark the admin API task complete until it reads
-  real provider gate state.
+- `/provider-status` reads checked-in `packages/domain/data/provider-gates.yaml`.
+  Each provider must list every `GATE_DIMENSIONS` key with a value in `pending`,
+  `approved`, `rejected`, or `not_applicable`. Provider `id` values must be
+  unique case-insensitively. Per-provider rollup: any `rejected` yields
+  `rejected-gate`; else any `pending` yields `pending-gate`; else `cleared`.
+  `actionable` is true when any provider rollup is `pending-gate` or
+  `rejected-gate`. Task 0.4 completion is only
+  `task_0_4_external_validation.complete`; do not infer it from cleared gate
+  columns.
 - Keep `docs/project-scaffold.plan.md` statuses aligned with verification,
   not just file presence.
 
@@ -138,8 +144,9 @@
   in `README.md`.
 - Keep branch, pull request, and release mechanics in `CONTRIBUTING.md`.
 - Keep scaffold status explicit in docs. Endpoints or gates that return
-  placeholders (for example `/provider-status` with `actionable: false`) must
-  be documented as incomplete.
+  placeholders must be documented as incomplete (for example `/offers` with an
+  empty list). `/provider-status` is wired to checked-in gate data; document
+  Task 0.4 separately until external validation is complete.
 - Command examples in docs must match real scripts in `package.json` and local
   runbook flows in `docs/05-runbook-local.md`.
 - Pull request bodies use the same structure in `.cursor/templates/pr-template.md`

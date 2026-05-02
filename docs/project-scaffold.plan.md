@@ -378,6 +378,10 @@ Notes:
   - Expected files: `docs/01-provider-matrix.md` access status section.
   - Verification: each provider marked approved or rejected for
     Phase 1.
+  - Status: this worktree adds checked-in provider gate state under
+    `packages/domain/data/provider-gates.yaml`, but external credential
+    and commercial validation remains incomplete until the YAML is updated
+    from real evidence.
 
 - [x] **Task 0.5: Define coverage gate methodology and thresholds**
   - Scope: freeze matching rules, tolerances, pass/fail criteria,
@@ -568,9 +572,9 @@ Notes:
   - Scope: `/health`, `/offers`, `/alerts`, `/provider-status`.
   - Expected files: `apps/service/src/http/*`.
   - Verification: integration checks and curl smoke tests.
-  - Status: routes are wired and the service now listens locally, but
-    `/provider-status` remains a clearly marked placeholder until real
-    gate state is available.
+  - Status: routes are wired and the service listens locally; `/provider-status`
+    reads `packages/domain/data/provider-gates.yaml`. Full admin verification
+    (integration tests, smoke scripts) remains future work.
 
 ### Phase 8 - CI and Fixture Maintenance
 
@@ -626,6 +630,10 @@ Notes:
   statuses for incomplete verification gates.
 - 2026-04-25: Merged Dependabot dependency and GitHub Actions updates;
   GitHub currently reports zero open Dependabot alerts.
+- 2026-04-28: Replaced `/provider-status` scaffold output with a
+  checked-in provider gate data source, domain loader/tests, stable
+  provider IDs plus display names, and documentation updates that keep
+  Task 0.4 external validation explicit.
 - 2026-04-28: Expanded the Travelpayouts baseline adapter with
   history/trend payload parsers, stricter alphabetic IATA validation,
   parser tests, and fixture refresh preservation for offline contract
@@ -722,8 +730,8 @@ discovered against real responses.
 
 ## Next Step
 
-Continue from the remaining gates: provider access validation, real
-provider gate state for `/provider-status`, DB-backed repository tests,
+Continue from the remaining gates: provider access validation (Task 0.4),
+DB-backed repository tests,
 provider-budget integration, and benchmark readiness. Do not proceed to
 full provider adapter rollout until the access gate, coverage gate
 methodology, AR cost model, and benchmark dataset are verified.
