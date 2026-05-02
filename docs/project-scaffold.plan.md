@@ -555,10 +555,12 @@ Notes:
     `TELEGRAM_ALERTS_ENABLED` and `ALERT_DRY_RUN`; render itinerary
     risk flags in messages.
   - Expected files: `telegram-notifier.ts`.
-  - Verification: private message delivered and readable; dry-run
-    suppresses send and logs payload.
-  - Status: formatting/escaping/flags and dry-run controls implemented;
-    retry strategy and live delivery verification still pending.
+  - Verification: dry-run suppresses send and logs payload; outbound
+    sends use timeout, bounded retry, and non-2xx logging (covered by
+    unit tests with fetch mocks). Private message readability remains an
+    ops smoke check against the real Bot API.
+  - Status: notifier behavior has focused unit coverage in this worktree;
+    optional live Telegram smoke remains manual.
 
 - [ ] **Task 7.2: Implement minimal admin API**
   - Scope: `/health`, `/offers`, `/alerts`, `/provider-status`.
@@ -626,6 +628,10 @@ Notes:
   history/trend payload parsers, stricter alphabetic IATA validation,
   parser tests, and fixture refresh preservation for offline contract
   samples.
+- 2026-04-28: Added `@lowroute/notifications` Vitest coverage for Telegram
+  dry-run, kill switch, outbound timeout wiring, bounded retry, non-2xx
+  logging, and transport-error paths; Task 7.1 verification note updated
+  accordingly.
 
 ## Documentation Discipline
 
