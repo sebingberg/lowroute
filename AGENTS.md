@@ -85,6 +85,29 @@
   `TRAVELPAYOUTS_REQ_LIMIT_PER_RUN`. `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR`
   `skip` keeps the earliest slice; `defer` keeps the latest tail slice.
 
+### Travelpayouts baseline parsing
+
+- Accept **history** payloads as either the provider envelope (`success`,
+  `data` with nested objects exposing `price`) or the helper shape
+  (`origin`, `destination`, `prices[]`). Accept **trend** payloads as either
+  the envelope (`data` rows with `value`) or the helper shape
+  (`origin`, `destination`, `points[].price`).
+- If `success` is present on a payload object, it must be `true`; envelope
+  parsing requires `success === true`.
+- Derive **p20** by sorting prices and linear interpolation at index position
+  `(n - 1) * 0.2`. Compute **median** explicitly: odd-length middle element,
+  even-length average of the two central values (do not reuse the p20
+  interpolation helper for median).
+- Enforce **IATA** as exactly three letters, uppercased in output; route must
+  be consistent between payload root and rows when both specify a leg.
+- Require all sampled prices to be finite numbers **greater than zero**.
+- Map parsed baselines with `toBaselineStats`: `route_key` is
+  `ORIGIN-DESTINATION`, `p20` and `median` are **USD** `Money`, and
+  `sample_size` matches the sample count.
+- Keep `scripts/refresh-provider-fixtures.ts` and
+  `tests/contract/travelpayouts.fixtures.json` aligned with parser tests in
+  `packages/providers/src/travelpayouts/baseline-adapter.test.ts`.
+
 ## Data And Gate Status
 
 - `tests/golden/recent-deals-benchmark.json` is not gate-ready while
