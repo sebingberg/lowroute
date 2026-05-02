@@ -1,18 +1,31 @@
+import { readEnv } from "@lowroute/config";
 import {
   type BaselineStats,
   buildAlertEligibilityService,
   type NormalizedOffer,
 } from "@lowroute/domain";
+import { alertsRepository } from "@lowroute/persistence";
 
-export const selectDeals = (
+export const selectDeals = async (
   offers: NormalizedOffer[],
   baselinesByRoute: ReadonlyMap<string, BaselineStats>,
-): NormalizedOffer[] => {
-  const eligibility = buildAlertEligibilityService();
-  return offers.filter((offer) =>
-    eligibility.shouldAlert(
-      offer,
-      baselinesByRoute.get(`${offer.origin}-${offer.destination}`) ?? null,
-    ),
-  );
+): Promise<NormalizedOffer[]> => {
+  const env = readEnv(process.env);
+  const eligibility = buildAlertEligibilityService(env);
+  const selected: NormalizedOffer[] = [];
+
+  for (const offer of offers) {
+    const baseline = baselinesByRoute.get(`${offer.origin}-${offer.destination}`) ?? null;
+    if (
+      await eligibility.shouldAlertForDelivery(offer, baseline, {
+        telegramChatId: env.TELEGRAM_CHAT_ID,
+        alertCooldownHours: env.ALERT_COOLDOWN_HOURS,
+        wasSentRecently: alertsRepository.wasSentRecently,
+      })
+    ) {
+      selected.push(offer);
+    }
+  }
+
+  return selected;
 };

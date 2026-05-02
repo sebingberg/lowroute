@@ -54,6 +54,14 @@
   `"false"` explicitly in `packages/config/src/env.ts`.
 - `TELEGRAM_ALERTS_ENABLED` is a kill switch and must default to `false`.
 - `ALERT_DRY_RUN` must log rendered alert payloads and must not call Telegram.
+- `sendAlerts` must persist each offer (`offers` upsert) before any Telegram
+  send.
+- `markSent` runs only after a successful send (`sendDealAlert` returns true);
+  skipped or failed sends must not write `sent_alerts`.
+- In-process dedupe in `sendAlerts` applies to the current batch only; cross-run
+  suppression uses `sent_alerts` and `wasSentRecently`.
+- Merged `Env` from `readEnv` and optional test overrides must be the same object
+  used for fingerprinting (`TELEGRAM_CHAT_ID`) and `buildTelegramNotifier`.
 - Hono app changes must preserve actual server startup in
   `apps/service/src/index.ts`; route wiring alone is insufficient.
 - pg-boss queue checks use `createQueue()`, `send()`, and `work()` handlers
@@ -87,6 +95,10 @@
   the minimum of `DUFFEL_REQ_LIMIT_PER_RUN`, `KIWI_REQ_LIMIT_PER_RUN`, and
   `TRAVELPAYOUTS_REQ_LIMIT_PER_RUN`. `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR`
   `skip` keeps the earliest slice; `defer` keeps the latest tail slice.
+- Route baseline **selection** uses `shouldAlert`; **delivery** gating uses
+  `shouldAlertForDelivery`, which consults
+  `wasSentRecently(alertFingerprint, ALERT_COOLDOWN_HOURS)` before allowing a
+  send.
 
 ### Travelpayouts baseline parsing
 
@@ -169,6 +181,8 @@
   `docs/05-runbook-local.md` rather than hiding them only in workflow files.
 - Documentation edits should pass markdownlint, and command snippets should be
   copy-pasteable as written.
+- Keep `docs/03-alert-policy.md` aligned with code when fingerprint inputs,
+  `DEFAULT_ALERT_TEMPLATE_VERSION`, or cooldown semantics change.
 
 ## User Rules
 

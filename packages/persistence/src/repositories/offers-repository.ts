@@ -1,13 +1,14 @@
-import type { NormalizedOffer } from "@lowroute/domain";
+import { buildOfferFingerprint, type NormalizedOffer } from "@lowroute/domain";
 
 import { getPool } from "../db.js";
 
 export type OffersRepository = {
-  readonly upsert: (offer: NormalizedOffer, offerFingerprint: string) => Promise<void>;
+  readonly upsert: (offer: NormalizedOffer) => Promise<void>;
 };
 
 export const offersRepository: OffersRepository = {
-  async upsert(offer, offerFingerprint) {
+  async upsert(offer) {
+    const offerFingerprint = buildOfferFingerprint(offer);
     await getPool().query(
       `
         insert into offers (
@@ -44,6 +45,8 @@ export const offersRepository: OffersRepository = {
           airport_change: offer.airport_change,
           overnight_layover: offer.overnight_layover,
           checked_bag_included: offer.checked_bag_included,
+          carry_on_included: offer.carry_on_included,
+          connection_minutes_min: offer.connection_minutes_min,
         }),
       ],
     );

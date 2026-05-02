@@ -1,0 +1,89 @@
+---
+description: "Alert selection, delivery cooldown, fingerprinting, and send ordering"
+globs:
+  - "apps/service/src/jobs/send-alerts.ts"
+  - "packages/domain/src/services/alert-eligibility-service.ts"
+  - "packages/domain/src/services/alert-fingerprints.ts"
+  - "packages/persistence/src/repositories/alerts-repository.ts"
+alwaysApply: false
+---
+
+# Alert Idempotency And Delivery
+
+Use this rule when changing alert eligibility, fingerprints, `sent_alerts`
+persistence, or the `sendAlerts` job.
+
+## Selection Vs Delivery
+
+- `shouldAlert` answers whether an offer beats the route baseline for
+  **selection** (deal quality). It does not consult DB send history.
+- `shouldAlertForDelivery` requires the same baseline pass, then applies
+  **delivery** cooldown by calling
+  `wasSentRecently(alertFingerprint, ALERT_COOLDOWN_HOURS)` (see
+  `packages/persistence/src/repositories/alerts-repository.ts`). Do not fold
+  delivery suppression into `shouldAlert` or duplicate cooldown logic outside
+  the repository.
+
+## `sendAlerts` Ordering And Idempotency
+
+- For each offer, **upsert the offer** via `repositories.offers.upsert` before
+  calling `notifier.sendDealAlert`. That keeps durable state consistent if the
+  send fails after persistence.
+- Call `repositories.alerts.markSent(alertFingerprint, offerFingerprint)` **only
+  when** `sendDealAlert` returns true (successful send). Skipped, dry-run, or
+  failed sends must not insert/update `sent_alerts`.
+
+## Fingerprint Inputs
+
+- Follow `docs/03-alert-policy.md`: `offer_fingerprint` from
+  `buildOfferFingerprint`, `alert_fingerprint` from
+  `buildAlertFingerprint(offerFingerprint, destinationChat, templateVersion)`.
+- `DEFAULT_ALERT_TEMPLATE_VERSION` in
+  `packages/domain/src/services/alert-fingerprints.ts` is part of the
+  fingerprint; changing it alters dedupe and cooldown keys.
+
+## Env And `TELEGRAM_CHAT_ID`
+
+- `sendAlerts` builds `const env: Env = { ...readEnv(process.env), ...options.env }`
+  and passes that `env` into `buildTelegramNotifier`. The **same** merged `env`
+  supplies `env.TELEGRAM_CHAT_ID` for `buildAlertFingerprint`. Tests that inject
+  partial `env` must keep chat id consistent so fingerprints match notifier
+  routing.
+
+## In-Process Dedupe (Same Batch Only)
+
+- The `seenAlertFingerprints` `Set` in `sendAlerts` dedupes **only** duplicate
+  offers within one invocation. It is not a substitute for
+  `wasSentRecently` / `sent_alerts` across job runs or processes.
+
+## Skipped And Failed Sends
+
+- If `sendDealAlert` returns false, do not `markSent`. Log or count failures
+  according to existing job patterns; do not treat a false return as "delivered
+  for cooldown purposes."
+- `ALERT_DRY_RUN` and `TELEGRAM_ALERTS_ENABLED` behavior stay in the notifier
+  and config; `markSent` still runs only on a successful `sendDealAlert` return
+  in the current contract.
+
+## Duplicate Offers
+
+- Two `NormalizedOffer` values that map to the same `alert_fingerprint` in one
+  batch: the in-process set skips the second. Across batches, the DB row in
+  `sent_alerts` enforces cooldown.
+
+## Pitfalls
+
+| Pitfall | Preferred handling |
+| --- | --- |
+| Marking sent before Telegram succeeds | `markSent` only after `sendDealAlert` returns true |
+| Using `shouldAlert` alone for send decisions in multi-step flows | Use `shouldAlertForDelivery` (or equivalent) where DB cooldown applies |
+| Mismatched `TELEGRAM_CHAT_ID` between fingerprint and notifier | Single merged `Env` for both |
+| Relying on the batch `Set` for cross-run idempotency | Use `wasSentRecently` and `markSent` / `sent_alerts` |
+
+## Reference Paths
+
+- `docs/03-alert-policy.md`
+- `apps/service/src/jobs/send-alerts.ts`
+- `packages/domain/src/services/alert-eligibility-service.ts`
+- `packages/domain/src/services/alert-fingerprints.ts`
+- `packages/persistence/src/repositories/alerts-repository.ts`

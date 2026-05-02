@@ -4,13 +4,17 @@
 
 - `TELEGRAM_ALERTS_ENABLED` defaults to `false`.
 - `ALERT_DRY_RUN` suppresses Telegram sends and logs payloads.
+- `ALERT_COOLDOWN_HOURS` (default `24`) suppresses repeats for the same
+  `alert_fingerprint` using `sent_alerts.sent_at_utc`.
 
 ## Fingerprint Composition
 
 ## `offer_fingerprint`
 
-- `provider` + `origin` + `destination` + `departure_date` + `return_date`.
-- Include normalized total amount and itinerary shape fields.
+- Stable hash over provider, route, dates, normalized payable amount,
+  payment path, AR exception class, baggage flags, connection risk, and
+  itinerary shape fields.
+- Source of truth: `packages/domain/src/services/alert-fingerprints.ts`.
 
 ## `alert_fingerprint`
 

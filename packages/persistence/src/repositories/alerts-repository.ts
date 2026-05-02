@@ -26,7 +26,9 @@ export const alertsRepository: AlertsRepository = {
       `
         insert into sent_alerts (alert_fingerprint, offer_fingerprint, sent_at_utc)
         values ($1, $2, now())
-        on conflict (alert_fingerprint) do nothing
+        on conflict (alert_fingerprint) do update set
+          offer_fingerprint = excluded.offer_fingerprint,
+          sent_at_utc = excluded.sent_at_utc
       `,
       [alertFingerprint, offerFingerprint],
     );
