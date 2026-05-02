@@ -1,5 +1,54 @@
 {
-  "refreshed_at_utc": "2026-04-25T00:00:00.000Z",
-  "note": "Scaffold fixture placeholder",
-  "records": []
+  "refreshed_at_utc": "2026-04-28T16:19:39.345Z",
+  "note": "Offline provider-envelope samples for Travelpayouts baseline parsers (see baseline-adapter.ts).",
+  "records": [
+    {
+      "kind": "history_ok",
+      "payload": {
+        "success": true,
+        "origin": "EZE",
+        "destination": "MAD",
+        "data": {
+          "2026-09-01": {
+            "price": 500
+          },
+          "2026-09-08": {
+            "price": 300
+          },
+          "2026-09-15": {
+            "price": 400
+          },
+          "2026-09-22": {
+            "price": 200
+          },
+          "2026-09-29": {
+            "price": 100
+          }
+        }
+      }
+    },
+    {
+      "kind": "trend_ok",
+      "payload": {
+        "success": true,
+        "data": [
+          {
+            "origin": "MIA",
+            "destination": "BOG",
+            "value": 180
+          },
+          {
+            "origin": "MIA",
+            "destination": "BOG",
+            "value": 220
+          },
+          {
+            "origin": "MIA",
+            "destination": "BOG",
+            "value": 200
+          }
+        ]
+      }
+    }
+  ]
 }

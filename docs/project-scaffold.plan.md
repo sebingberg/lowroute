@@ -378,6 +378,10 @@ Notes:
   - Expected files: `docs/01-provider-matrix.md` access status section.
   - Verification: each provider marked approved or rejected for
     Phase 1.
+  - Status: this worktree adds checked-in provider gate state under
+    `packages/domain/data/provider-gates.yaml`, but external credential
+    and commercial validation remains incomplete until the YAML is updated
+    from real evidence.
 
 - [x] **Task 0.5: Define coverage gate methodology and thresholds**
   - Scope: freeze matching rules, tolerances, pass/fail criteria,
@@ -401,8 +405,9 @@ Notes:
   - Expected files: `tests/golden/recent-deals-benchmark.json`,
     `tests/golden/README.md`.
   - Verification: dataset complete, schema-conformant, PII-free.
-  - Status: scaffold placeholder created with sample rows only; still
-    needs full 20-30 real-deal dataset.
+  - Status: scaffold placeholder remains. This worktree adds structural
+    and gate-ready validation plus `pnpm benchmark:gate`; still needs the
+    full 20-30 real-deal dataset before the gate can pass.
 
 - [ ] **Task 1.3: Calibrate distance bands**
   - Scope: validate tier thresholds against benchmark acceptance
@@ -473,7 +478,8 @@ Notes:
   - Scope: historical/trend retrieval for baseline service.
   - Expected files: `packages/providers/src/travelpayouts/*`.
   - Verification: baseline parser tests.
-  - Status: adapter scaffolded; baseline parser tests still pending.
+  - Status: history/trend JSON parsers and unit tests in place; live API
+    retrieval and persistence wiring remain pending.
 
 ### Phase 4 - Deal Baseline, Scoring, and Selection
 
@@ -537,8 +543,10 @@ Notes:
   - Scope: deterministic generation from destination/date universe.
   - Expected files: `apps/service/src/jobs/discover-candidates.ts`.
   - Verification: run output stable for fixed seed/time.
-  - Status: dated deterministic candidates are implemented; provider
-    budget integration remains pending.
+  - Status: deterministic candidates honor origin/EPA flags, per-run
+    provider budgets (`min` across Duffel/Kiwi/Travelpayouts), and
+    `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR` (`skip` prefix / `defer` suffix);
+    worker job wiring remains pending.
 
 - [ ] **Task 6.2: Implement fetch/score/select/send pipeline**
   - Scope: `pg-boss` queues and retries; respect dry-run and kill
@@ -562,18 +570,20 @@ Notes:
     `TELEGRAM_ALERTS_ENABLED` and `ALERT_DRY_RUN`; render itinerary
     risk flags in messages.
   - Expected files: `telegram-notifier.ts`.
-  - Verification: private message delivered and readable; dry-run
-    suppresses send and logs payload.
-  - Status: formatting/escaping/flags and dry-run controls implemented;
-    retry strategy and live delivery verification still pending.
+  - Verification: dry-run suppresses send and logs payload; outbound
+    sends use timeout, bounded retry, and non-2xx logging (covered by
+    unit tests with fetch mocks). Private message readability remains an
+    ops smoke check against the real Bot API.
+  - Status: notifier behavior has focused unit coverage in this worktree;
+    optional live Telegram smoke remains manual.
 
 - [ ] **Task 7.2: Implement minimal admin API**
   - Scope: `/health`, `/offers`, `/alerts`, `/provider-status`.
   - Expected files: `apps/service/src/http/*`.
   - Verification: integration checks and curl smoke tests.
-  - Status: routes are wired and the service now listens locally, but
-    `/provider-status` remains a clearly marked placeholder until real
-    gate state is available.
+  - Status: routes are wired and the service listens locally; `/provider-status`
+    reads `packages/domain/data/provider-gates.yaml`. Full admin verification
+    (integration tests, smoke scripts) remains future work.
 
 ### Phase 8 - CI and Fixture Maintenance
 
@@ -589,6 +599,8 @@ Notes:
   - Expected files: `scripts/refresh-provider-fixtures.ts`,
     `docs/08-fixture-refresh-policy.md`.
   - Verification: refresh flow runs and updates fixtures consistently.
+  - Status: this worktree preserves offline Travelpayouts history/trend
+    samples during fixture refresh and formats generated fixture JSON.
 
 ## Implementation Log
 
@@ -631,6 +643,26 @@ Notes:
   `ALERT_COOLDOWN_HOURS`, cooldown-aware delivery eligibility,
   repository-backed duplicate suppression, and successful-send persistence
   for `sent_alerts`.
+- 2026-04-28: Added benchmark dataset readiness validation with separate
+  scaffold and gate-ready checks, a `pnpm benchmark:gate` command, and
+  curator documentation. The gate intentionally remains blocked while
+  `recent-deals-benchmark.json` is marked as a placeholder.
+- 2026-04-28: Replaced `/provider-status` scaffold output with a
+  checked-in provider gate data source, domain loader/tests, stable
+  provider IDs plus display names, and documentation updates that keep
+  Task 0.4 external validation explicit.
+- 2026-04-28: Expanded the Travelpayouts baseline adapter with
+  history/trend payload parsers, stricter alphabetic IATA validation,
+  parser tests, and fixture refresh preservation for offline contract
+  samples.
+- 2026-04-28: Integrated provider-budget pressure into candidate discovery:
+  per-run output is capped by the lowest Phase 1 provider run limit, with
+  deterministic `skip`/`defer` overflow behavior and tests for cap
+  stability, multi-origin distribution, and ambient env isolation.
+- 2026-04-28: Added `@lowroute/notifications` Vitest coverage for Telegram
+  dry-run, kill switch, outbound timeout wiring, bounded retry, non-2xx
+  logging, and transport-error paths; Task 7.1 verification note updated
+  accordingly.
 
 ## Documentation Discipline
 
@@ -715,8 +747,8 @@ discovered against real responses.
 
 ## Next Step
 
-Continue from the remaining gates: provider access validation, real
-provider gate state for `/provider-status`, DB-backed repository tests,
+Continue from the remaining gates: provider access validation (Task 0.4),
+DB-backed repository tests,
 provider-budget integration, and benchmark readiness. Do not proceed to
 full provider adapter rollout until the access gate, coverage gate
 methodology, AR cost model, and benchmark dataset are verified.

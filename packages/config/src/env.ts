@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { PROVIDER_REQ_LIMIT_PER_RUN_DEFAULT } from "./constants.js";
+
 const booleanEnv = (defaultValue: boolean) => {
   return z
     .preprocess(
@@ -70,11 +72,26 @@ const envSchema = z.object({
   COVERAGE_TRIP_DAYS_TOLERANCE: z.coerce.number().int().positive().default(2),
   COVERAGE_DEPARTURE_DATE_TOLERANCE_DAYS: z.coerce.number().int().positive().default(7),
   COVERAGE_RETURN_DATE_TOLERANCE_DAYS: z.coerce.number().int().positive().default(7),
+  DUFFEL_REQ_LIMIT_PER_RUN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(PROVIDER_REQ_LIMIT_PER_RUN_DEFAULT.duffel),
+  KIWI_REQ_LIMIT_PER_RUN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(PROVIDER_REQ_LIMIT_PER_RUN_DEFAULT.kiwi),
+  TRAVELPAYOUTS_REQ_LIMIT_PER_RUN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(PROVIDER_REQ_LIMIT_PER_RUN_DEFAULT.travelpayouts),
   PROVIDER_LIMIT_OVERFLOW_BEHAVIOR: z.enum(["skip", "defer"]).default("skip"),
 });
 
 export type Env = z.infer<typeof envSchema>;
 
-export const readEnv = (input: NodeJS.ProcessEnv): Env => {
+export const readEnv = (input: Record<string, unknown>): Env => {
   return envSchema.parse(input);
 };

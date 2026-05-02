@@ -17,7 +17,21 @@ export type Candidate = {
 
 export type DiscoverCandidatesOptions = {
   readonly now?: Date;
-  readonly env?: Pick<Env, "ALLOWED_ORIGINS" | "ENABLE_EPA">;
+  readonly env?: Partial<
+    Pick<
+      Env,
+      | "ALLOWED_ORIGINS"
+      | "ENABLE_EPA"
+      | "DUFFEL_REQ_LIMIT_PER_RUN"
+      | "KIWI_REQ_LIMIT_PER_RUN"
+      | "TRAVELPAYOUTS_REQ_LIMIT_PER_RUN"
+      | "PROVIDER_LIMIT_OVERFLOW_BEHAVIOR"
+    >
+  >;
+};
+
+const resolveEnv = (env: DiscoverCandidatesOptions["env"]): Env => {
+  return readEnv({ ...process.env, ...(env ?? {}) });
 };
 
 const addDays = (date: Date, days: number): Date => {
@@ -37,8 +51,33 @@ const allowedOrigins = (env: Pick<Env, "ALLOWED_ORIGINS" | "ENABLE_EPA">): strin
   return [...new Set(origins)];
 };
 
+/** One discovery candidate maps to one search request per provider at fetch time. */
+const discoveryBudgetPerRun = (env: Env): number => {
+  return Math.min(
+    env.DUFFEL_REQ_LIMIT_PER_RUN,
+    env.KIWI_REQ_LIMIT_PER_RUN,
+    env.TRAVELPAYOUTS_REQ_LIMIT_PER_RUN,
+  );
+};
+
+const applyDiscoveryBudget = (
+  ordered: Candidate[],
+  budget: number,
+  behavior: Env["PROVIDER_LIMIT_OVERFLOW_BEHAVIOR"],
+): Candidate[] => {
+  if (ordered.length <= budget) {
+    return ordered;
+  }
+
+  if (behavior === "skip") {
+    return ordered.slice(0, budget);
+  }
+
+  return ordered.slice(ordered.length - budget);
+};
+
 export const discoverCandidates = (options: DiscoverCandidatesOptions = {}): Candidate[] => {
-  const env = options.env ?? readEnv(process.env);
+  const env = resolveEnv(options.env);
   const now = options.now ?? new Date();
   const horizonDays: number[] = [];
   for (
@@ -49,11 +88,13 @@ export const discoverCandidates = (options: DiscoverCandidatesOptions = {}): Can
     horizonDays.push(daysFromNow);
   }
 
-  return allowedOrigins(env).flatMap((origin) => {
+  const origins = allowedOrigins(env);
+  // ! Keep ordering stable as horizon -> destination -> origin so budget slicing stays deterministic.
+  const ordered: Candidate[] = horizonDays.flatMap((daysFromNow) => {
     return destinations.flatMap((destination) => {
       const window = DISCOVERY_WINDOWS[destination.tier];
 
-      return horizonDays.map((daysFromNow) => ({
+      return origins.map((origin) => ({
         departure_date: toDateOnly(addDays(now, daysFromNow)),
         destination: destination.code,
         max_trip_days: window.max_trip_days,
@@ -62,4 +103,10 @@ export const discoverCandidates = (options: DiscoverCandidatesOptions = {}): Can
       }));
     });
   });
+
+  return applyDiscoveryBudget(
+    ordered,
+    discoveryBudgetPerRun(env),
+    env.PROVIDER_LIMIT_OVERFLOW_BEHAVIOR,
+  );
 };

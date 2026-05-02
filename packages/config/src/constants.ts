@@ -19,6 +19,13 @@ export const DISCOVERY_DATE_HORIZON_DAYS = {
 
 export const DISCOVERY_DATE_STEP_DAYS = 7;
 
+/** Default per-provider max search requests issued in one discovery run (env overrides). */
+export const PROVIDER_REQ_LIMIT_PER_RUN_DEFAULT = {
+  duffel: 120,
+  kiwi: 120,
+  travelpayouts: 120,
+} as const;
+
 export const MIN_TRIP_DAYS_BY_TIER = {
   near: 7,
   medium: 14,

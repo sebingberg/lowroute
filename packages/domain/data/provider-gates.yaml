@@ -1,0 +1,33 @@
+# Checked-in provider gate status for operator/admin surfaces (GET /provider-status).
+# Keep docs/01-provider-matrix.md in sync when editing this file.
+# Task 0.4 (live credentials, terms, rate limits, billing) remains external; do not
+# mark gates approved here without evidence from that validation work.
+
+version: 1
+as_of: "2026-04-28"
+# Task 0.4: live API credentials, terms, rate limits, and billing. Set complete to
+# true only after that validation is finished; it is not inferred from the table.
+task_0_4_external_validation:
+  complete: false
+providers:
+  - id: duffel
+    display_name: Duffel
+    gates:
+      credentials_tested: pending
+      terms_allow_use_case: pending
+      rate_limits_known: pending
+      cost_billing_documented: pending
+  - id: kiwi
+    display_name: Kiwi Tequila
+    gates:
+      credentials_tested: pending
+      terms_allow_use_case: pending
+      rate_limits_known: pending
+      cost_billing_documented: pending
+  - id: travelpayouts
+    display_name: Travelpayouts
+    gates:
+      credentials_tested: pending
+      terms_allow_use_case: pending
+      rate_limits_known: pending
+      cost_billing_documented: pending

@@ -1,0 +1,78 @@
+---
+description: Provider gate YAML, rollup, and /provider-status payload contract.
+globs:
+  - "packages/domain/src/provider-gates.ts"
+  - "packages/domain/src/provider-gates.test.ts"
+  - "packages/domain/data/provider-gates.yaml"
+  - "apps/service/src/http/provider-status.ts"
+alwaysApply: false
+---
+
+# Provider Gate Status
+
+Use this rule when editing checked-in provider gate data, rollup logic, or the
+`/provider-status` HTTP response.
+
+## Authoritative Source And Docs Sync
+
+- Canonical gate data is `packages/domain/data/provider-gates.yaml`. Domain
+  code loads it via `import.meta.url` relative to
+  `packages/domain/src/provider-gates.ts`.
+- When YAML changes, keep `docs/01-provider-matrix.md` aligned so humans see
+  the same columns as the file.
+
+## YAML Shape And Validation
+
+- `GATE_DIMENSIONS` in `provider-gates.ts` is the single list of required gate
+  keys. Each provider `gates` object must include **every** dimension:
+  `credentials_tested`, `terms_allow_use_case`, `rate_limits_known`,
+  `cost_billing_documented`.
+- Each dimension value must be exactly one of: `pending`, `approved`,
+  `rejected`, `not_applicable`.
+
+## Task 0.4 Versus Gate Columns
+
+- `task_0_4_external_validation.complete` is a separate boolean in the YAML.
+  Do not treat "all gates cleared" (`rollupProviderGateStatus` returns
+  `cleared`) as proof that Task 0.4 is done. Set `complete` to `true` only after
+  external credential and commercial validation evidence exists.
+
+## Rollup And Actionable
+
+- Per-provider rollup (`rollupProviderGateStatus`): if any gate is `rejected`,
+  status is `rejected-gate`. Else if any gate is `pending`, status is
+  `pending-gate`. Otherwise status is `cleared`. So `rejected` wins over
+  `pending`, and `pending` wins over cleared states (`approved` /
+  `not_applicable`).
+- `actionable` on the payload is `true` when **any** provider has rollup
+  `pending-gate` or `rejected-gate` (`providerGatesActionable` /
+  `gatesRequireAction`).
+
+## Provider Identity
+
+- Duplicate `providers[].id` values are invalid. Validation rejects duplicates
+  case-insensitively (normalized with `toLowerCase()`).
+
+## Integration Points
+
+- `packages/domain/src/provider-gates.ts`: parse, validate, rollup, and
+  `buildProviderStatusPayload` / `getProviderStatusPayload`.
+- `packages/domain/src/provider-gates.test.ts`: contracts for YAML loading,
+  rollup, uniqueness, and payload shape.
+- `apps/service/src/http/provider-status.ts`: Hono handler returning JSON from
+  `getProviderStatusPayload()`.
+
+## Pitfalls
+
+- Omitting a `GATE_DIMENSIONS` key under `gates` fails validation even if the
+  YAML parses.
+- Confusing `actionable` with Task 0.4 completion: the API exposes both; they
+  are independent.
+- Adding a new gate dimension requires updating `GATE_DIMENSIONS`, the YAML,
+  tests, and `docs/01-provider-matrix.md` together.
+
+## Reference Implementation
+
+- Treat `rollupProviderGateStatus`, `providerGatesActionable`, and
+  `buildProviderStatusPayload` in `packages/domain/src/provider-gates.ts` as the
+  normative definitions for rollup and HTTP payload fields.
