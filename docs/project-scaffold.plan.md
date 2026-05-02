@@ -405,8 +405,9 @@ Notes:
   - Expected files: `tests/golden/recent-deals-benchmark.json`,
     `tests/golden/README.md`.
   - Verification: dataset complete, schema-conformant, PII-free.
-  - Status: scaffold placeholder created with sample rows only; still
-    needs full 20-30 real-deal dataset.
+  - Status: scaffold placeholder remains. This worktree adds structural
+    and gate-ready validation plus `pnpm benchmark:gate`; still needs the
+    full 20-30 real-deal dataset before the gate can pass.
 
 - [ ] **Task 1.3: Calibrate distance bands**
   - Scope: validate tier thresholds against benchmark acceptance
@@ -630,6 +631,10 @@ Notes:
   statuses for incomplete verification gates.
 - 2026-04-25: Merged Dependabot dependency and GitHub Actions updates;
   GitHub currently reports zero open Dependabot alerts.
+- 2026-04-28: Added benchmark dataset readiness validation with separate
+  scaffold and gate-ready checks, a `pnpm benchmark:gate` command, and
+  curator documentation. The gate intentionally remains blocked while
+  `recent-deals-benchmark.json` is marked as a placeholder.
 - 2026-04-28: Replaced `/provider-status` scaffold output with a
   checked-in provider gate data source, domain loader/tests, stable
   provider IDs plus display names, and documentation updates that keep

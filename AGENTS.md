@@ -25,6 +25,9 @@
 - Full precommit routine: `pnpm precommit`.
 - Local DB migration: `pnpm migrate:up` and `pnpm migrate:down`.
 - pg-boss smoke: `pnpm smoke:provider` after Postgres is reachable.
+- Benchmark gate: `pnpm benchmark:gate` validates
+  `tests/golden/recent-deals-benchmark.json` with gate-ready rules (row count,
+  discovery window, HTTPS `source_url` policy, PII scan, no `sample-source`).
 
 ## Tooling Conventions
 
@@ -110,8 +113,14 @@
 
 ## Data And Gate Status
 
-- `tests/golden/recent-deals-benchmark.json` is not gate-ready while
-  `"placeholder": true`.
+- `tests/golden/recent-deals-benchmark.json`: scaffold shape is enforced via
+  `validateBenchmarkScaffold`; gate readiness is enforced by
+  `pnpm benchmark:gate` (`validateBenchmarkGateReady`), requiring
+  `placeholder: false`, 20-30 rows, each `discovered_date` within the last 90
+  days, HTTPS `source_url` without reserved or private hosts, PII-free
+  strings (including encoded or nested variants), and no `sample-source` for
+  `source_site`. While `"placeholder": true`, the file is intentionally not
+  gate-ready.
 - `/provider-status` reads checked-in `packages/domain/data/provider-gates.yaml`.
   Each provider must list every `GATE_DIMENSIONS` key with a value in `pending`,
   `approved`, `rejected`, or `not_applicable`. Provider `id` values must be
