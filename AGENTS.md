@@ -6,6 +6,10 @@
 - App: `apps/service` runs a Hono HTTP API inside the worker process.
 - Packages: `config`, `domain`, `providers`, `notifications`, and
   `persistence`.
+- `packages/notifications` uses `packages/notifications/vitest.config.ts` to
+  alias `@lowroute/config` and `@lowroute/domain` to sibling `src` entry
+  points so `pnpm --filter @lowroute/notifications test` does not require
+  building those packages first.
 - Database: PostgreSQL migrations live under `infra/migrations`.
 - Tests: Vitest unit tests are co-located with source as `*.test.ts`.
 
@@ -73,9 +77,36 @@
 - Travel rules must honor configured values such as `MAX_LAYOVER_HOURS`.
 - Destination data is checked-in YAML under `packages/domain/data`; do not
   replace it with hardcoded TypeScript constants.
-- Candidate discovery must be deterministic for an injected `now`, honor
-  `ALLOWED_ORIGINS` and `ENABLE_EPA`, and keep provider-budget pressure
-  explicit.
+- Candidate discovery must use a deterministic injected `now`, honor
+  `ALLOWED_ORIGINS`, and when `ENABLE_EPA` is false exclude `EPA` from
+  eligible origins. Build candidates in stable order (horizon, then
+  destinations, then origins) before applying the shared per-run cap, which is
+  the minimum of `DUFFEL_REQ_LIMIT_PER_RUN`, `KIWI_REQ_LIMIT_PER_RUN`, and
+  `TRAVELPAYOUTS_REQ_LIMIT_PER_RUN`. `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR`
+  `skip` keeps the earliest slice; `defer` keeps the latest tail slice.
+
+### Travelpayouts baseline parsing
+
+- Accept **history** payloads as either the provider envelope (`success`,
+  `data` with nested objects exposing `price`) or the helper shape
+  (`origin`, `destination`, `prices[]`). Accept **trend** payloads as either
+  the envelope (`data` rows with `value`) or the helper shape
+  (`origin`, `destination`, `points[].price`).
+- If `success` is present on a payload object, it must be `true`; envelope
+  parsing requires `success === true`.
+- Derive **p20** by sorting prices and linear interpolation at index position
+  `(n - 1) * 0.2`. Compute **median** explicitly: odd-length middle element,
+  even-length average of the two central values (do not reuse the p20
+  interpolation helper for median).
+- Enforce **IATA** as exactly three letters, uppercased in output; route must
+  be consistent between payload root and rows when both specify a leg.
+- Require all sampled prices to be finite numbers **greater than zero**.
+- Map parsed baselines with `toBaselineStats`: `route_key` is
+  `ORIGIN-DESTINATION`, `p20` and `median` are **USD** `Money`, and
+  `sample_size` matches the sample count.
+- Keep `scripts/refresh-provider-fixtures.ts` and
+  `tests/contract/travelpayouts.fixtures.json` aligned with parser tests in
+  `packages/providers/src/travelpayouts/baseline-adapter.test.ts`.
 
 ## Data And Gate Status
 
