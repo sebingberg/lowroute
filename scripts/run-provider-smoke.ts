@@ -1,5 +1,5 @@
 import { readEnv } from "@lowroute/config";
-import PgBoss from "pg-boss";
+import { PgBoss } from "pg-boss";
 
 const QUEUE = "provider-smoke";
 
@@ -41,7 +41,7 @@ const run = async (): Promise<void> => {
     if (timeout) {
       clearTimeout(timeout);
     }
-    await boss.offWork({ id: workerId });
+    await boss.offWork(QUEUE, { id: workerId });
     await boss.stop();
   }
 };
