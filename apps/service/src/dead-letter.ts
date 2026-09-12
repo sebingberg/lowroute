@@ -28,7 +28,7 @@ export type ReplayBoss = {
     queue: string,
     options: { batchSize?: number },
   ) => Promise<{ data: T; id: string }[]>;
-  readonly getQueueSize: (queue: string) => Promise<number>;
+  readonly getQueue: (queue: string) => Promise<{ queuedCount: number } | null>;
   readonly send: WorkerBoss["send"];
 };
 
@@ -73,8 +73,9 @@ export const replayDeadLetters = async (
   write: (line: string) => void,
 ): Promise<ReplayResult> => {
   if (args.dryRun) {
-    // ! getQueueSize is read-only; fetch would take job leases.
-    const size = await boss.getQueueSize(DEAD_LETTER_QUEUE);
+    // ! getQueue is read-only; fetch would take job leases.
+    // ! A missing queue row means empty, not an error.
+    const size = (await boss.getQueue(DEAD_LETTER_QUEUE))?.queuedCount ?? 0;
     write(`would replay ${size} job(s) from ${DEAD_LETTER_QUEUE} to ${args.originQueue}`);
     return { inspected: size, replayed: 0 };
   }
