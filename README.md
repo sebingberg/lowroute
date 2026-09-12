@@ -83,7 +83,7 @@ Buenos Aires origins and prepares strict, rule-driven Telegram alert flows.
    pnpm migrate:up
    ```
 
-5. Start the service.
+5. Start the service (also boots the pg-boss worker chain).
 
    ```bash
    pnpm --filter @lowroute/service dev
@@ -138,6 +138,8 @@ Use `.env.example` as the source of truth for local setup.
 - `ALLOWED_ORIGINS`: comma-separated IATA origins, default `EZE,AEP`.
 - `ENABLE_EPA`: optional enablement gate for `EPA` origin.
 - `MAX_LAYOVER_HOURS`: travel-rule constraint used in candidate filtering.
+- `WORKER_DISCOVERY_INTERVAL_MIN`: minutes between discovery runs, default
+  `360`.
 
 ## HTTP Endpoints
 

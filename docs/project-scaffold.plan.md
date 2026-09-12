@@ -545,8 +545,12 @@ Notes:
   - Verification: run output stable for fixed seed/time.
   - Status: deterministic candidates honor origin/EPA flags, per-run
     provider budgets (`min` across Duffel/Kiwi/Travelpayouts), and
-    `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR` (`skip` prefix / `defer` suffix);
-    worker job wiring remains pending.
+    `PROVIDER_LIMIT_OVERFLOW_BEHAVIOR` (`skip` prefix / `defer` suffix).
+    Worker wiring landed in `apps/service/src/queue.ts`: boot starts the
+    worker, registers the discover chain queue, and enqueues one discovery
+    run immediately plus a scheduled repeat every
+    `WORKER_DISCOVERY_INTERVAL_MIN`. Queue creation and discover fan-out are
+    covered by `queue.test.ts`; live Postgres proof is still pending.
 
 - [ ] **Task 6.2: Implement fetch/score/select/send pipeline**
   - Scope: `pg-boss` queues and retries; respect dry-run and kill
@@ -556,12 +560,26 @@ Notes:
     dry-run mode.
   - Status: job flow skeleton implemented; this worktree advances
     `selectDeals` and `sendAlerts` with cooldown selection and post-send
-    persistence, but queue orchestration and retry semantics remain pending.
+    persistence, and `apps/service/src/queue.ts` wires the full
+    discover -> fetch -> score -> select -> send chain onto existing job
+    logic with no rewrites (fetch builds real searches but yields stub
+    offers until provider→domain normalization lands). Handler-level chaining is covered
+    by `queue.test.ts`; repeated dry-run proof against Postgres is still
+    pending.
 
 - [ ] **Task 6.3: Add failure controls**
   - Scope: backoff, dead letters, replay strategy.
   - Expected files: worker config and handlers.
   - Verification: fault-injection tests pass.
+  - Status: chain queues use retry limit 5 with backoff and a shared
+    `lowroute.dead-letter` queue; `scripts/replay-dead-letter.ts` (`pnpm
+    replay:dead-letter`) replays dead letters into a chosen step, with
+    drills documented in `docs/05-runbook-local.md`. Dry-run is read-only
+    (queue size only, no job leases); arg parsing and replay pairing are
+    covered by `dead-letter.test.ts`, failure propagation by
+    `queue.test.ts`. Replay is origin-aware (jobs carry originQueue; mixed
+    contents are refused) and unqueued sends throw so retry/DLQ applies.
+    Live kill-provider fault injection is still pending.
 
 ### Phase 7 - Telegram and Admin API
 
