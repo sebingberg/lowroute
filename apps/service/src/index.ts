@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import { readEnv } from "@lowroute/config";
 import { Hono } from "hono";
-import type PgBoss from "pg-boss";
+import type { PgBoss } from "pg-boss";
 import { pino } from "pino";
 
 import { alertsHandler } from "./http/alerts.js";
