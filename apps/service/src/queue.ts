@@ -2,7 +2,12 @@ import { randomUUID } from "node:crypto";
 import { readEnv } from "@lowroute/config";
 import type { NormalizedOffer } from "@lowroute/domain";
 import type { NormalizedSearchRequest } from "@lowroute/providers";
-import { PgBoss } from "pg-boss";
+import {
+  type Queue as BossQueue,
+  type ScheduleOptions as BossScheduleOptions,
+  type SendOptions as BossSendOptions,
+  PgBoss,
+} from "pg-boss";
 import { pino } from "pino";
 
 import { type Candidate, discoverCandidates } from "./jobs/discover-candidates.js";
@@ -72,17 +77,17 @@ export type WorkerLogger = {
 };
 
 export type WorkerBoss = {
-  readonly createQueue: (name: string, options?: PgBoss.Queue) => Promise<void>;
+  readonly createQueue: (name: string, options?: BossQueue) => Promise<void>;
   readonly schedule: (
     name: string,
     cron: string,
     data?: object,
-    options?: PgBoss.ScheduleOptions,
+    options?: BossScheduleOptions,
   ) => Promise<void>;
   readonly send: (
     name: string,
     data: Record<string, unknown>,
-    options?: PgBoss.SendOptions,
+    options?: BossSendOptions,
   ) => Promise<string | null>;
   readonly work: (name: string, handler: (jobs: QueueJob[]) => Promise<unknown>) => Promise<string>;
 };
@@ -97,7 +102,7 @@ export type ChainSteps = {
 
 const workerLogger = pino({ name: "lowroute-worker" });
 
-const sendOptions = (): PgBoss.SendOptions => ({
+const sendOptions = (): BossSendOptions => ({
   deadLetter: DEAD_LETTER_QUEUE,
   retryBackoff: true,
   retryDelay: DEFAULT_RETRY_DELAY_SECONDS,
