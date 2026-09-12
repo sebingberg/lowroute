@@ -1,5 +1,11 @@
 import { type Env, readEnv } from "@lowroute/config";
 import {
+  buildTravelRulesService,
+  type NormalizedOffer,
+  type TravelRulesService,
+  toNormalizedOffer,
+} from "@lowroute/domain";
+import {
   duffelProbe,
   kiwiProbe,
   type NormalizedProviderOffer,
@@ -17,7 +23,7 @@ export type FetchJobInput = {
 };
 
 export type FetchJobOutput = {
-  readonly offers: NormalizedProviderOffer[];
+  readonly offers: NormalizedOffer[];
   readonly errors: ProviderRequestError[];
 };
 
@@ -77,6 +83,13 @@ export const fetchOffers = async (
 ): Promise<FetchJobOutput> => {
   const env = deps.env ?? readEnv(process.env);
   const probes = deps.probes ?? defaultProbes;
+  // ! Single source of truth for the layover cap: the search value flows into
+  // ! both the adapter ctx and the travel-rules env, built once per batch (not
+  // ! per offer). The global env MAX_LAYOVER_HOURS is intentionally bypassed on
+  // ! this path.
+  const rules = buildTravelRulesService({
+    MAX_LAYOVER_HOURS: input.search.max_layover_hours,
+  });
   const results = await Promise.all(
     PROVIDER_ORDER.map((provider) =>
       runProbe(provider, probes[provider], input, deps, apiKeyFor(env, provider)),
@@ -85,10 +98,39 @@ export const fetchOffers = async (
 
   return {
     offers: results.flatMap((result) =>
-      result instanceof ProviderRequestError ? [] : result.offers,
+      result instanceof ProviderRequestError
+        ? []
+        : toDomainOffers(result.offers, input.search.max_layover_hours, rules, result.provider),
     ),
     errors: results.filter(
       (result): result is ProviderRequestError => result instanceof ProviderRequestError,
     ),
   };
+};
+
+// ! Adapter throws on malformed quotes (bad currency, non-finite amount);
+// ! drop those offers so one bad quote cannot fail the job. Fail-open with a
+// ! once-per-provider-batch warn so silent provider-schema drift stays
+// ! observable; FetchJobOutput shape is unchanged and providers stay isolated
+// ! (one call per provider result).
+const toDomainOffers = (
+  offers: readonly NormalizedProviderOffer[],
+  maxLayoverHours: number,
+  rules: TravelRulesService,
+  provider: ProviderName,
+): NormalizedOffer[] => {
+  let malformedDropped = 0;
+  const mapped = offers.flatMap((offer) => {
+    try {
+      const candidate = toNormalizedOffer(offer, { maxLayoverHours }, rules);
+      return candidate === null ? [] : [candidate];
+    } catch {
+      malformedDropped += 1;
+      return [];
+    }
+  });
+  if (malformedDropped > 0) {
+    console.warn(`[fetchOffers] dropped ${malformedDropped} malformed ${provider} offer(s)`);
+  }
+  return mapped;
 };

@@ -7,6 +7,8 @@ export * from "./services/alert-eligibility-service.js";
 export * from "./services/alert-fingerprints.js";
 export * from "./services/cost-normalization-service.js";
 export * from "./services/deal-baseline-service.js";
+export * from "./services/offer-dto.js";
+export * from "./services/provider-offer-adapter.js";
 export * from "./services/scoring-service.js";
 export * from "./services/travel-rules-service.js";
 export * from "./value-objects/money.js";

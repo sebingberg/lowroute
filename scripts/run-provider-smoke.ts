@@ -20,7 +20,7 @@ const run = async (): Promise<void> => {
   });
 
   const workerId = await boss.work<{ ping: string }>(QUEUE, async ([job]) => {
-    if (!job || job.data.ping !== "pong") {
+    if (job?.data.ping !== "pong") {
       throw new Error("pg-boss smoke payload mismatch");
     }
 
