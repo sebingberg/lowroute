@@ -20,6 +20,7 @@
     "migrate:up": "node-pg-migrate up -m infra/migrations",
     "migrate:down": "node-pg-migrate down -m infra/migrations",
     "smoke:provider": "tsx scripts/run-provider-smoke.ts",
+    "replay:dead-letter": "tsx scripts/replay-dead-letter.ts",
     "refresh:fixtures": "tsx scripts/refresh-provider-fixtures.ts",
     "benchmark:gate": "tsx scripts/validate-recent-deals-benchmark.ts"
   },
