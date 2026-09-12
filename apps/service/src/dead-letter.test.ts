@@ -70,6 +70,14 @@ describe("parseReplayArgs", () => {
     expect(() => parseReplayArgs([...base, "0"])).toThrow("--limit");
     expect(() => parseReplayArgs([...base, "-3"])).toThrow("--limit");
     expect(() => parseReplayArgs([...base, "many"])).toThrow("--limit");
+    // ! Bare --limit must not silently take the default batch size.
+    expect(() => parseReplayArgs(["--queue", FETCH_QUEUE, "--limit"])).toThrow("--limit");
+    expect(() => parseReplayArgs(["--queue", FETCH_QUEUE, "--limit", "--dry-run"])).toThrow(
+      "--limit",
+    );
+    // ! Partial numerics must not truncate.
+    expect(() => parseReplayArgs([...base, "1.5"])).toThrow("--limit");
+    expect(() => parseReplayArgs([...base, "10junk"])).toThrow("--limit");
   });
 });
 
