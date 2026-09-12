@@ -25,7 +25,7 @@ const createFakeBoss = (
       fetched.push({ options, queue });
       return jobs as { data: T; id: string }[];
     },
-    getQueueSize: async () => size,
+    getQueue: async () => ({ queuedCount: size }),
     send: async (name, data) => {
       sent.push({ data, name });
       return sendResult;
