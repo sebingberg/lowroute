@@ -59,4 +59,25 @@ describe("requestJson", () => {
     expect(message).toContain("token=***");
     expect(message).not.toContain("live-secret");
   });
+
+  it("maps a timeout during body parsing to retryable timeout", async () => {
+    const timeoutError = new Error("The operation timed out");
+    timeoutError.name = "TimeoutError";
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => ({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw timeoutError;
+      },
+    }));
+
+    const error = await requestJson("https://api.duffel.com/air/offer_requests", {
+      provider: "duffel",
+      method: "POST",
+      headers: {},
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    }).catch((cause: unknown) => cause);
+
+    expect(error).toMatchObject({ code: "timeout", retryable: true });
+  });
 });

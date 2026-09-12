@@ -60,6 +60,32 @@ describe("travelpayoutsProbe", () => {
     expect(expensive?.quoted_amount).toBe(745);
   });
 
+  it("carries the priced departure date instead of the requested date", async () => {
+    const fetchImpl = stubFetch({
+      success: true,
+      currency: "USD",
+      data: {
+        MAD: {
+          "0": { price: 745, airline: "UX", departure_at: "2026-10-01T10:00:00Z" },
+          "1": { price: 690, airline: "AR", departure_at: "2026-10-08T10:00:00Z" },
+          "2": { price: 500, airline: "LA" },
+        },
+      },
+    });
+
+    const result = await travelpayoutsProbe.run(request, {
+      apiKey: "tp-token",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    // ! The dateless entry falls back to its position key, which is not a
+    // ! date, so only the two dated entries map.
+    expect(result.offers.map((offer) => offer.departure_date)).toEqual([
+      "2026-10-08",
+      "2026-10-01",
+    ]);
+  });
+
   it("uppercases a lowercase response currency", async () => {
     const fetchImpl = stubFetch({
       success: true,

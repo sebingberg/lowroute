@@ -105,13 +105,36 @@ describe("refreshTravelpayoutsBaseline", () => {
     const fetchImpl = stubFetch(calendarPayload);
     const upsert = vi.fn(async (_baseline: BaselineStats) => undefined);
 
+    for (const month of ["october", "2026-00", "2026-13", "2026-1"]) {
+      await expect(
+        refreshTravelpayoutsBaseline(
+          { origin: "EZE", destination: "MAD", month },
+          { apiKey: "tp-token", fetchImpl: fetchImpl as unknown as typeof fetch, upsert },
+        ),
+      ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
+    }
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects payloads for another route before persisting", async () => {
+    const mistargeted = {
+      ...calendarPayload,
+      data: {
+        "2026-10-01": { origin: "EZE", destination: "BCN", price: 500 },
+        "2026-10-08": { origin: "EZE", destination: "BCN", price: 300 },
+        "2026-10-15": { origin: "EZE", destination: "BCN", price: 400 },
+      },
+    };
+    const fetchImpl = stubFetch(mistargeted);
+    const upsert = vi.fn(async (_baseline: BaselineStats) => undefined);
+
     await expect(
       refreshTravelpayoutsBaseline(
-        { origin: "EZE", destination: "MAD", month: "october" },
+        { origin: "EZE", destination: "MAD", month: "2026-10" },
         { apiKey: "tp-token", fetchImpl: fetchImpl as unknown as typeof fetch, upsert },
       ),
-    ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
-    expect(fetchImpl).not.toHaveBeenCalled();
+    ).rejects.toMatchObject({ code: "bad_response", retryable: false });
     expect(upsert).not.toHaveBeenCalled();
   });
 
