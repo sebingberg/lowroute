@@ -37,14 +37,19 @@ const mapEntry = (
     return null;
   }
   // ! Cheap entries are keyed by position, so prefer the priced departure date for stable ids.
+  // ! The monthly response spans many dates; attributing the price to the
+  // ! requested date would mislabel it, so carry the validated provider date.
   const pricedDate =
     typeof entry.departure_at === "string" ? entry.departure_at.slice(0, 10) : dateKey;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(pricedDate)) {
+    return null;
+  }
   return {
     provider: "travelpayouts",
     id: `tp-cheap-${request.origin}-${request.destination}-${pricedDate}`,
     origin: request.origin,
     destination: request.destination,
-    departure_date: request.departure_date,
+    departure_date: pricedDate,
     return_date: request.return_date,
     merchant_country: UNKNOWN_MERCHANT_COUNTRY,
     currency,

@@ -154,8 +154,14 @@ export const defaultSteps: ChainSteps = {
 };
 
 export const resolveDiscoveryIntervalMin = (input: NodeJS.ProcessEnv = process.env): number => {
-  const parsed = Number.parseInt(input.WORKER_DISCOVERY_INTERVAL_MIN ?? "", 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_DISCOVERY_INTERVAL_MIN;
+  // ! parseInt would truncate "1.5" to 1 or "45minutes" to 45; only a full
+  // ! digit string counts as an explicit setting, anything else falls back.
+  const raw = input.WORKER_DISCOVERY_INTERVAL_MIN ?? "";
+  if (!/^\d+$/.test(raw)) {
+    return DEFAULT_DISCOVERY_INTERVAL_MIN;
+  }
+  const parsed = Number(raw);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : DEFAULT_DISCOVERY_INTERVAL_MIN;
 };
 
 export const discoveryCron = (intervalMin: number): string => {
@@ -163,6 +169,13 @@ export const discoveryCron = (intervalMin: number): string => {
     throw new RangeError(`WORKER_DISCOVERY_INTERVAL_MIN must be a positive integer`);
   }
   if (intervalMin < 60) {
+    // ! cron minute steps reset each hour, so 45 would run at :45 then :00
+    // ! (a 15-minute gap). Only admit steps that divide the hour evenly.
+    if (60 % intervalMin !== 0) {
+      throw new RangeError(
+        `WORKER_DISCOVERY_INTERVAL_MIN=${intervalMin} has no exact cron form (sub-hour values must divide 60)`,
+      );
+    }
     return `*/${intervalMin} * * * *`;
   }
   if (intervalMin === 24 * 60) {

@@ -58,7 +58,7 @@ Starting the service also boots the pg-boss worker, which registers the
 `lowroute.select` -> `lowroute.send` chain. Each boot enqueues one discovery
 run immediately, then repeats on a schedule every
 `WORKER_DISCOVERY_INTERVAL_MIN` (default `360` minutes). The interval must
-map exactly to cron (`<60`, hourly multiples, or `1440`); anything else
+map exactly to cron (`<60` dividing 60 evenly, hourly multiples, or `1440`); anything else
 fails worker startup loudly. The boot kickoff uses a stable pg-boss
 singleton so concurrent boots enqueue one run. Run a single service
 replica; multi-replica is untested. Failed jobs retry 5

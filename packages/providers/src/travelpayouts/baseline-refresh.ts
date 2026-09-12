@@ -35,7 +35,7 @@ export const refreshTravelpayoutsBaseline = async (
   input: BaselineRefreshInput,
   deps: BaselineRefreshDeps,
 ): Promise<BaselineStats> => {
-  if (!/^\d{4}-\d{2}$/.test(input.month)) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.month)) {
     throw new ProviderRequestError({
       provider: "travelpayouts",
       code: "invalid_request",
@@ -84,6 +84,16 @@ export const refreshTravelpayoutsBaseline = async (
       });
     }
     throw error;
+  }
+
+  // ! A wrong-route payload must never persist under the requested baseline.
+  const expectedRouteKey = `${input.origin.toUpperCase()}-${input.destination.toUpperCase()}`;
+  if (stats.route_key !== expectedRouteKey) {
+    throw new ProviderRequestError({
+      provider: "travelpayouts",
+      code: "bad_response",
+      message: `travelpayouts calendar route mismatch: wanted ${expectedRouteKey}, got ${stats.route_key}`,
+    });
   }
 
   await deps.upsert(stats);

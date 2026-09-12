@@ -29,15 +29,25 @@ const readNumber = (value: unknown): number =>
 
 // ! Tequila expects dd/mm/yyyy while the contract carries yyyy-mm-dd.
 const toTequilaDate = (date: string): string => {
-  const [year, month, day] = date.split("-");
-  if (!year || !month || !day) {
+  // ! A loose split would forward "2026-1-2" to the provider and burn quota
+  // ! on a doomed request, so require a real calendar date up front.
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const year = match?.[1] === undefined ? Number.NaN : Number(match[1]);
+  const month = match?.[2] === undefined ? Number.NaN : Number(match[2]);
+  const day = match?.[3] === undefined ? Number.NaN : Number(match[3]);
+  const roundTrips =
+    Number.isInteger(year) &&
+    Number.isInteger(month) &&
+    Number.isInteger(day) &&
+    new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === date;
+  if (!roundTrips) {
     throw new ProviderRequestError({
       provider: "kiwi",
       code: "invalid_request",
       message: `kiwi probe needs yyyy-mm-dd dates, got ${date}`,
     });
   }
-  return `${day}/${month}/${year}`;
+  return `${match?.[3]}/${match?.[2]}/${match?.[1]}`;
 };
 
 // ! Tequila mixes outbound and return legs in one route array flagged by
@@ -94,6 +104,18 @@ const mapItinerary = (
     return null;
   }
   const directions = collectDirections(item);
+  // ! With no usable legs there is no itinerary to price; the cap check
+  // ! would pass vacuous layovers, so reject incomplete itineraries up front.
+  if (
+    directions.length === 0 ||
+    directions.some(
+      (direction) =>
+        direction.length === 0 ||
+        direction.some((leg) => !Number.isFinite(leg.departSec) || !Number.isFinite(leg.arriveSec)),
+    )
+  ) {
+    return null;
+  }
   const legs = directions.flat();
   const layovers = directions.flatMap((direction) => layoverMinutes(direction));
   // ! No downstream stage enforces the cap, so over-cap itineraries are dropped here.

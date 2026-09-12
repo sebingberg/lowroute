@@ -99,6 +99,16 @@ describe("resolveDiscoveryIntervalMin", () => {
     expect(resolveDiscoveryIntervalMin({ WORKER_DISCOVERY_INTERVAL_MIN: "soon" })).toBe(
       DEFAULT_DISCOVERY_INTERVAL_MIN,
     );
+    // ! parseInt-style truncation must not apply: these are not explicit settings.
+    expect(resolveDiscoveryIntervalMin({ WORKER_DISCOVERY_INTERVAL_MIN: "1.5" })).toBe(
+      DEFAULT_DISCOVERY_INTERVAL_MIN,
+    );
+    expect(resolveDiscoveryIntervalMin({ WORKER_DISCOVERY_INTERVAL_MIN: "45minutes" })).toBe(
+      DEFAULT_DISCOVERY_INTERVAL_MIN,
+    );
+    expect(resolveDiscoveryIntervalMin({ WORKER_DISCOVERY_INTERVAL_MIN: "10junk" })).toBe(
+      DEFAULT_DISCOVERY_INTERVAL_MIN,
+    );
   });
 });
 
@@ -118,6 +128,9 @@ describe("discoveryCron", () => {
     expect(() => discoveryCron(-5)).toThrow(RangeError);
     expect(() => discoveryCron(90)).toThrow(RangeError);
     expect(() => discoveryCron(1500)).toThrow(RangeError);
+    // ! Minute steps reset each hour; 7 and 45 would drift off-cadence.
+    expect(() => discoveryCron(7)).toThrow(RangeError);
+    expect(() => discoveryCron(45)).toThrow(RangeError);
   });
 });
 
