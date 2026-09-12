@@ -101,6 +101,18 @@ const mapOffer = (
     return null;
   }
   const slices = collectSlices(offer);
+  // ! With no usable slices there is no itinerary to price; the cap check
+  // ! would pass vacuous layovers, so reject incomplete offers up front.
+  if (
+    slices.length === 0 ||
+    slices.some((segments) =>
+      segments.some(
+        (segment) => !Number.isFinite(segment.departMs) || !Number.isFinite(segment.arriveMs),
+      ),
+    )
+  ) {
+    return null;
+  }
   const layovers = slices.flatMap((segments) => connectionMinutes(segments));
   // ! No downstream stage enforces the cap, so over-cap itineraries are dropped here.
   if (exceedsLayoverCap(request, layovers)) {

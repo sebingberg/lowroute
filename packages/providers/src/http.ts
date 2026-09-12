@@ -89,6 +89,16 @@ export const requestJson = async <T>(url: string, init: ProviderHttpRequest): Pr
   try {
     return (await response.json()) as T;
   } catch (error) {
+    // ! AbortSignal.timeout also fires while the body streams, so a timeout
+    // ! during response.json() must stay retryable instead of bad_response.
+    if (isTimeoutError(error)) {
+      throw new ProviderRequestError({
+        provider: init.provider,
+        code: "timeout",
+        message: `${init.provider} request timed out after ${timeoutMs}ms for ${safeUrl}`,
+        cause: error,
+      });
+    }
     throw new ProviderRequestError({
       provider: init.provider,
       code: "bad_response",

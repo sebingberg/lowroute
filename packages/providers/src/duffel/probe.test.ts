@@ -182,6 +182,38 @@ describe("duffelProbe", () => {
     expect(result.offers).toEqual([]);
   });
 
+  it("drops offers with no usable itinerary", async () => {
+    const fetchImpl = stubFetch(
+      offerResponse([
+        { id: "off_no_slices", total_amount: "400.00", total_currency: "USD", slices: [] },
+        {
+          id: "off_timeless_segment",
+          total_amount: "450.00",
+          total_currency: "USD",
+          slices: [
+            {
+              segments: [
+                {
+                  origin: { iata_code: "EZE" },
+                  destination: { iata_code: "MAD" },
+                  departing_at: "not-a-date",
+                  arriving_at: null,
+                },
+              ],
+            },
+          ],
+        },
+      ]),
+    );
+
+    const result = await duffelProbe.run(request, {
+      apiKey: "test-key",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result.offers).toEqual([]);
+  });
+
   it("throws missing_credentials when no key is configured", async () => {
     const saved = process.env.DUFFEL_API_KEY;
     delete process.env.DUFFEL_API_KEY;

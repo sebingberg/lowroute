@@ -110,16 +110,38 @@ describe("kiwiProbe", () => {
   it("rejects malformed search dates as invalid requests", async () => {
     const fetchImpl = stubFetch({ data: [] });
 
-    await expect(
-      kiwiProbe.run(
-        { ...request, departure_date: "20261001" },
-        { apiKey: "key", fetchImpl: fetchImpl as unknown as typeof fetch },
-      ),
-    ).rejects.toMatchObject({
-      code: "invalid_request",
-      retryable: false,
-    });
+    for (const departure_date of ["20261001", "2026-1-2", "abcd-ef-gh", "2026-02-30"]) {
+      await expect(
+        kiwiProbe.run(
+          { ...request, departure_date },
+          { apiKey: "key", fetchImpl: fetchImpl as unknown as typeof fetch },
+        ),
+      ).rejects.toMatchObject({
+        code: "invalid_request",
+        retryable: false,
+      });
+    }
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("drops itineraries with no usable legs", async () => {
+    const fetchImpl = stubFetch({
+      data: [
+        { id: "empty-route", price: 400, route: [] },
+        {
+          id: "timeless-legs",
+          price: 450,
+          route: [{ dTimeUTC: "soon", aTimeUTC: null }],
+        },
+      ],
+    });
+
+    const result = await kiwiProbe.run(request, {
+      apiKey: "tequila-key",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result.offers).toEqual([]);
   });
 
   it("drops itineraries whose longest layover exceeds max_layover_hours", async () => {
