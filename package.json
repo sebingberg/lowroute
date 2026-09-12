@@ -15,6 +15,7 @@
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
     "test": "pnpm -r test",
+    "test:integration": "vitest run --config tests/integration/vitest.config.ts",
     "precommit": "tsx scripts/precommit.ts",
     "precommit:fast": "tsx scripts/precommit.ts --fast",
     "migrate:up": "node-pg-migrate up -m infra/migrations",
