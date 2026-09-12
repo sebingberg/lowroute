@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readEnv } from "@lowroute/config";
 import type { NormalizedOffer } from "@lowroute/domain";
 import type { NormalizedSearchRequest } from "@lowroute/providers";
-import PgBoss from "pg-boss";
+import { PgBoss } from "pg-boss";
 import { pino } from "pino";
 
 import { type Candidate, discoverCandidates } from "./jobs/discover-candidates.js";
