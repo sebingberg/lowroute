@@ -3,7 +3,7 @@ export class Money {
   public readonly currency: string;
 
   public constructor(minorUnits: bigint, currency: string) {
-    if (!currency || currency.length !== 3) {
+    if (currency?.length !== 3) {
       throw new Error("Money currency must be 3-letter ISO code");
     }
 
