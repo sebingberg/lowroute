@@ -102,7 +102,7 @@ describe("fetchOffers", () => {
       cabin: "economy",
       max_layover_hours: 8,
       merchant_country: "XX",
-      payment_path: "merchant_outside_ar",
+      payment_path: "foreign_card",
       score: 0,
     });
     expect(output.offers[0]?.quoted_price.amount).toBe(500);
@@ -121,25 +121,36 @@ describe("fetchOffers", () => {
     );
   });
 
-  it("drops probe offers over the search layover cap", async () => {
-    const overCap = {
+  it("passes through long minimum connections (layover cap is probe-side duty)", async () => {
+    // ! connection_minutes_min is the SHORTEST connection, so the adapter must
+    // ! not treat it as a maximum. Probes drop over-cap itineraries on the
+    // ! full layover list (exceedsLayoverCap); stub probes bypass that stage,
+    // ! so a 481-minute minimum survives mapping here by design.
+    const longMinimum = {
       run: vi.fn(async () => ({
         provider: "kiwi" as const,
         searched_at_utc: "2026-09-12T00:00:00.000Z",
         request: search,
-        offers: [offerFor("kiwi", "k-over", 481)],
+        offers: [offerFor("kiwi", "k-long", 481)],
       })),
     };
     const probes = {
       duffel: stubProbe("duffel", ["d1"]),
-      kiwi: overCap,
+      kiwi: longMinimum,
       travelpayouts: stubProbe("travelpayouts", ["t1"]),
     };
 
     const output = await fetchOffers({ search }, { probes, env });
 
     expect(output.errors).toEqual([]);
-    expect(output.offers.map((offer) => offer.provider)).toEqual(["duffel", "travelpayouts"]);
+    expect(output.offers.map((offer) => offer.provider)).toEqual([
+      "duffel",
+      "kiwi",
+      "travelpayouts",
+    ]);
+    expect(
+      output.offers.find((offer) => offer.provider === "kiwi")?.connection_minutes_min,
+    ).toBe(481);
   });
 
   it("maps AR merchant offers to foreign_card through the chain", async () => {
@@ -189,10 +200,36 @@ describe("fetchOffers", () => {
     expect(output.offers.map((offer) => offer.provider)).toEqual(["duffel", "travelpayouts"]);
   });
 
-  it("warns once per provider batch when malformed quotes drop", async () => {
+  it("drops zero and negative quotes silently (no malformed warn)", async () => {
+    const probes = {
+      duffel: stubProbe("duffel", ["d1"]),
+      kiwi: {
+        run: vi.fn(async () => ({
+          provider: "kiwi" as const,
+          searched_at_utc: "2026-09-12T00:00:00.000Z",
+          request: search,
+          offers: [
+            { ...offerFor("kiwi", "k-zero"), quoted_amount: 0 },
+            { ...offerFor("kiwi", "k-neg"), quoted_amount: -50 },
+          ],
+        })),
+      },
+      travelpayouts: stubProbe("travelpayouts", ["t1"]),
+    };
+
+    const output = await fetchOffers({ search }, { probes, env });
+
+    expect(output.errors).toEqual([]);
+    expect(output.offers.map((offer) => offer.provider)).toEqual(["duffel", "travelpayouts"]);
+  });
+
+  it("warns once per provider batch when structurally malformed offers drop", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const malformed = { ...offerFor("kiwi", "k-bad"), quoted_amount: NaN };
+      // ! Zero/negative/non-finite quotes and non-USD currency return null
+      // ! (silent data drops); only a throw inside the adapter (here: a
+      // ! non-string destination) counts as malformed and warns.
+      const malformed = { ...offerFor("kiwi", "k-bad"), destination: 42 as unknown as string };
       const probes = {
         duffel: stubProbe("duffel", ["d1"]),
         kiwi: {

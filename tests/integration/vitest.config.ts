@@ -17,6 +17,9 @@ export default defineConfig({
       "@lowroute/persistence": fileURLToPath(
         new URL("../../packages/persistence/src/index.ts", import.meta.url),
       ),
+      "@lowroute/providers": fileURLToPath(
+        new URL("../../packages/providers/src/index.ts", import.meta.url),
+      ),
     },
   },
   test: {

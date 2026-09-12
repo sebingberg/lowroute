@@ -36,10 +36,25 @@ export type ProviderOfferAdapterContext = {
 
 const DAY_MS = 86_400_000;
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+const parseDateOnlyUtc = (value: string): number | null => {
+  if (!DATE_ONLY.test(value)) {
+    return null;
+  }
+  const ms = Date.parse(`${value}T00:00:00.000Z`);
+  if (!Number.isFinite(ms)) {
+    return null;
+  }
+  // ! Date.parse normalizes impossible dates (2026-02-30 becomes 2026-03-02),
+  // ! so round-trip the canonical UTC form and reject on mismatch.
+  return new Date(ms).toISOString().slice(0, 10) === value ? ms : null;
+};
+
 const tripDaysBetween = (departureDate: string, returnDate: string): number | null => {
-  const start = Date.parse(`${departureDate}T00:00:00.000Z`);
-  const end = Date.parse(`${returnDate}T00:00:00.000Z`);
-  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+  const start = parseDateOnlyUtc(departureDate);
+  const end = parseDateOnlyUtc(returnDate);
+  if (start === null || end === null) {
     return null;
   }
   return Math.round((end - start) / DAY_MS);
@@ -50,15 +65,15 @@ export const toNormalizedOffer = (
   ctx: ProviderOfferAdapterContext,
   rules: TravelRulesService,
 ): NormalizedOffer | null => {
-  // ! Single connection-cap enforcement point: this per-offer pre-check.
-  // ! passesHardRules below re-checks the stamped max_layover_hours against a
-  // ! rules service built from the same search value (once per batch in
-  // ! fetchOffers), so it holds by construction; the global env
-  // ! MAX_LAYOVER_HOURS is intentionally not consulted on this path.
-  if (offer.risk.connection_minutes_min > ctx.maxLayoverHours * 60) {
-    return null;
-  }
-
+  // ! No per-offer layover-cap check here: connection_minutes_min is the
+  // ! SHORTEST connection (mappers stamp Math.min for the short-connection
+  // ! scoring penalty), so it cannot enforce a maximum. The cap is enforced
+  // ! probe-side on the full layover list (exceedsLayoverCap drops any
+  // ! itinerary with a layover over the search max_layover_hours; see the
+  // ! duffel/kiwi probes), and passesHardRules below re-checks the stamped
+  // ! max_layover_hours against a rules service built from the same search
+  // ! value. The global env MAX_LAYOVER_HOURS is intentionally not consulted
+  // ! on this path.
   const destination = offer.destination.toUpperCase();
   const tier = destinations.find((destinationEntry) => destinationEntry.code === destination)?.tier;
   if (tier === undefined) {
@@ -82,6 +97,13 @@ export const toNormalizedOffer = (
     return null;
   }
 
+  // ! Public boundary: drop non-positive or non-finite quotes before Money
+  // ! construction (live mappers already reject these; this guards direct
+  // ! callers with stub or hand-built input).
+  if (!Number.isFinite(offer.quoted_amount) || offer.quoted_amount <= 0) {
+    return null;
+  }
+
   const merchantCountry = offer.merchant_country.toUpperCase();
   const quotedPrice = Money.fromDecimal(offer.quoted_amount, offer.currency);
   const candidate: NormalizedOffer = {
@@ -98,15 +120,18 @@ export const toNormalizedOffer = (
     merchant_country: merchantCountry,
     quoted_price: quotedPrice,
     normalized_payable: quotedPrice,
-    // ! AR merchants map to foreign_card: not merchant_outside_ar (would
-    // ! misstate the merchant location per
-    // ! .cursor/rules/domain-deal-rules.mdc pitfalls), and not ar_card (needs a
-    // ! documented exception class plus AR-card payment per AGENTS.md Domain
-    // ! Rules and docs/07-ar-cost-normalization.md R3). Probe offers carry no
-    // ! card/tax-class context, so foreign_card (DEFAULT_PAYMENT_PATH) is the
-    // ! honest no-tax default: cost-normalization-service applies AR tax only
-    // ! for ar_card + AR merchant + ar_exception_class.
-    payment_path: merchantCountry === "AR" ? "foreign_card" : "merchant_outside_ar",
+    // ! AR and unknown (XX) merchants map to foreign_card: not
+    // ! merchant_outside_ar (would misstate the merchant location per
+    // ! .cursor/rules/domain-deal-rules.mdc pitfalls; XX is emitted by Duffel
+    // ! and Travelpayouts precisely when the merchant is unknown), and not
+    // ! ar_card (needs a documented exception class plus AR-card payment per
+    // ! AGENTS.md Domain Rules and docs/07-ar-cost-normalization.md R3).
+    // ! Probe offers carry no card/tax-class context, so foreign_card
+    // ! (DEFAULT_PAYMENT_PATH) is the honest no-tax default:
+    // ! cost-normalization-service applies AR tax only for ar_card + AR
+    // ! merchant + ar_exception_class.
+    payment_path:
+      merchantCountry === "AR" || merchantCountry === "XX" ? "foreign_card" : "merchant_outside_ar",
     score: 0,
   };
 

@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { Money, toOfferDto } from "@lowroute/domain";
 
 import {
   CHAIN_QUEUES,
@@ -7,6 +9,7 @@ import {
   DEFAULT_DISCOVERY_INTERVAL_MIN,
   DISCOVER_QUEUE,
   discoveryCron,
+  fetchCandidateOffers,
   FETCH_QUEUE,
   type FetchJobData,
   type QueueJob,
@@ -225,6 +228,135 @@ describe("registerWorker", () => {
     } satisfies FetchJobData;
     await expect(handlers.get(FETCH_QUEUE)?.([job(FETCH_QUEUE, payload)])).rejects.toThrow(
       "provider exploded",
+    );
+  });
+
+  it("rehydrates offer DTOs to Money before scoring and enqueues JSON-safe data", async () => {
+    const { boss, handlers, sent } = createFakeBoss();
+    const seenByScore: { quotedMinorUnits: unknown; isMoney: boolean }[] = [];
+    const steps = stubSteps({
+      score: (offers) => {
+        for (const offer of offers) {
+          seenByScore.push({
+            isMoney: offer.quoted_price instanceof Money,
+            quotedMinorUnits: offer.quoted_price.minorUnits,
+          });
+        }
+        return offers;
+      },
+    });
+    await registerWorker(boss, steps, silentLogger);
+
+    const dto = toOfferDto({
+      airport_change: false,
+      cabin: "economy",
+      carry_on_included: true,
+      checked_bag_included: false,
+      connection_minutes_min: 60,
+      departure_date: "2026-10-01",
+      destination: "MAD",
+      destination_tier: "medium",
+      max_layover_hours: 8,
+      merchant_country: "US",
+      normalized_payable: Money.fromDecimal(500, "USD"),
+      origin: "EZE",
+      overnight_layover: false,
+      payment_path: "merchant_outside_ar",
+      provider: "duffel",
+      quoted_price: Money.fromDecimal(500, "USD"),
+      return_date: "2026-10-15",
+      score: 0,
+      self_transfer: false,
+      separate_tickets: false,
+      trip_days: 14,
+    });
+    const payload = {
+      offers: [dto],
+      originQueue: SCORE_QUEUE,
+      runId: "run-1",
+    } satisfies ScoreJobData;
+    await handlers.get(SCORE_QUEUE)?.([job(SCORE_QUEUE, payload, "job-3")]);
+
+    expect(seenByScore).toEqual([{ isMoney: true, quotedMinorUnits: 50000n }]);
+    expect(sent).toHaveLength(1);
+    expect(() => JSON.stringify(sent[0]?.data)).not.toThrow();
+  });
+});
+
+describe("fetchCandidateOffers", () => {
+  const search = {
+    origin: "EZE",
+    destination: "MAD",
+    departure_date: "2026-10-01",
+    return_date: "2026-10-15",
+    cabin: "economy" as const,
+    adults: 1 as const,
+    max_layover_hours: 8,
+  };
+  it("fans out one candidate per search request through the provider adapter path", async () => {
+    const offerFor = (provider: "duffel" | "kiwi" | "travelpayouts", id: string) => ({
+      provider,
+      id,
+      origin: "EZE",
+      destination: "MAD",
+      departure_date: "2026-10-01",
+      return_date: "2026-10-15",
+      merchant_country: "US",
+      currency: "USD",
+      quoted_amount: 500,
+      risk: {
+        self_transfer: false,
+        separate_tickets: false,
+        airport_change: false,
+        overnight_layover: false,
+        checked_bag_included: false,
+        carry_on_included: true,
+        connection_minutes_min: 60,
+      },
+      raw_ref: `${provider}:${id}`,
+    });
+    const stubProbe = (provider: "duffel" | "kiwi" | "travelpayouts", ids: string[]) => ({
+      run: vi.fn(async () => ({
+        provider,
+        searched_at_utc: "2026-09-12T00:00:00.000Z",
+        request: search,
+        offers: ids.map((id) => offerFor(provider, id)),
+      })),
+    });
+    const probes = {
+      duffel: stubProbe("duffel", ["d1"]),
+      kiwi: stubProbe("kiwi", []),
+      travelpayouts: stubProbe("travelpayouts", []),
+    };
+    const candidates = [
+      {
+        origin: "EZE",
+        destination: "MAD",
+        departure_date: "2026-10-01",
+        min_trip_days: 7,
+        max_trip_days: 14,
+      },
+      {
+        origin: "EZE",
+        destination: "MAD",
+        departure_date: "2026-11-01",
+        min_trip_days: 7,
+        max_trip_days: 14,
+      },
+    ];
+
+    const offers = await fetchCandidateOffers(candidates, {
+      probes,
+      env: { DUFFEL_API_KEY: "duffel-key", KIWI_API_KEY: "kiwi-key", TRAVELPAYOUTS_TOKEN: "tp" },
+    });
+
+    expect(offers).toHaveLength(2);
+    expect(offers[0]?.quoted_price).toBeInstanceOf(Money);
+    expect(offers[0]?.trip_days).toBe(14);
+    expect(probes.duffel.run).toHaveBeenCalledTimes(2);
+    expect(probes.duffel.run).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "EZE", destination: "MAD", departure_date: "2026-10-01" }),
+      expect.objectContaining({ apiKey: "duffel-key" }),
     );
   });
 });

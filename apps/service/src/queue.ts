@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { readEnv } from "@lowroute/config";
-import type { NormalizedOffer } from "@lowroute/domain";
+import {
+  fromOfferDto,
+  type NormalizedOffer,
+  type OfferDto,
+  toOfferDto,
+} from "@lowroute/domain";
 import type { NormalizedSearchRequest } from "@lowroute/providers";
 import {
   type Queue as BossQueue,
@@ -11,6 +16,7 @@ import {
 import { pino } from "pino";
 
 import { type Candidate, discoverCandidates } from "./jobs/discover-candidates.js";
+import { fetchOffers, type FetchOffersDeps } from "./jobs/fetch-offers.js";
 import { scoreOffers } from "./jobs/score-offers.js";
 import { selectDeals } from "./jobs/select-deals.js";
 import { sendAlerts } from "./jobs/send-alerts.js";
@@ -48,19 +54,21 @@ export type FetchJobData = {
 };
 
 export type ScoreJobData = {
-  readonly offers: NormalizedOffer[];
+  // ! Offers cross pg-boss as JSON-safe DTOs (Money.minorUnits is bigint and
+  // ! JSON.stringify throws on bigint); the score handler rehydrates them.
+  readonly offers: OfferDto[];
   readonly originQueue: string;
   readonly runId: string;
 };
 
 export type SelectJobData = {
-  readonly offers: NormalizedOffer[];
+  readonly offers: OfferDto[];
   readonly originQueue: string;
   readonly runId: string;
 };
 
 export type SendJobData = {
-  readonly deals: NormalizedOffer[];
+  readonly deals: OfferDto[];
   readonly originQueue: string;
   readonly runId: string;
 };
@@ -128,23 +136,29 @@ const toSearchRequest = (
   return_date: addDaysToDateOnly(candidate.departure_date, candidate.max_trip_days),
 });
 
-// ! Plan A landed live probes, but provider→domain normalization does not exist
-// ! yet. Fanning out fetchOffers here would burn provider quota and drop every
-// ! result, so the fetch step validates search construction against the real
-// ! contract and yields no offers until normalization lands.
-const fetchStubOffers = async (candidates: Candidate[]): Promise<NormalizedOffer[]> => {
+// ! Production fetch path: one discovery candidate fans out to one search
+// ! request per provider via fetchOffers (probe errors ride along per
+// ! provider; an unexpected throw fails the job so pg-boss retries).
+export const fetchCandidateOffers = async (
+  candidates: Candidate[],
+  deps: FetchOffersDeps = {},
+): Promise<NormalizedOffer[]> => {
   const env = readEnv(process.env);
-  for (const candidate of candidates) {
-    // ! Result intentionally discarded: construction type-checks the request
-    // ! contract per candidate while sending nothing (see comment above).
-    toSearchRequest(candidate, env.MAX_LAYOVER_HOURS);
-  }
-  return [];
+  const perCandidate = await Promise.all(
+    candidates.map(async (candidate) => {
+      const output = await fetchOffers(
+        { search: toSearchRequest(candidate, env.MAX_LAYOVER_HOURS) },
+        deps,
+      );
+      return output.offers;
+    }),
+  );
+  return perCandidate.flat();
 };
 
 export const defaultSteps: ChainSteps = {
   discover: () => discoverCandidates(),
-  fetch: (candidates) => fetchStubOffers(candidates),
+  fetch: (candidates) => fetchCandidateOffers(candidates),
   score: (offers) => scoreOffers(offers),
   // ! Stub until Plan A lands: empty baselines force baseline=null, so selection
   // ! currently applies cooldown gating only. Replace with a baseline-repository
@@ -258,7 +272,7 @@ export const registerWorker = async (
         boss,
         logger,
         SCORE_QUEUE,
-        { offers, originQueue: SCORE_QUEUE, runId: data.runId },
+        { offers: offers.map(toOfferDto), originQueue: SCORE_QUEUE, runId: data.runId },
         { jobId: job.id },
       );
       logger.info(
@@ -275,12 +289,12 @@ export const registerWorker = async (
         { jobId: job.id, offerCount: data.offers.length, queue: SCORE_QUEUE, runId: data.runId },
         "score started",
       );
-      const offers = steps.score(data.offers);
+      const offers = steps.score(data.offers.map(fromOfferDto));
       await sendNext(
         boss,
         logger,
         SELECT_QUEUE,
-        { offers, originQueue: SELECT_QUEUE, runId: data.runId },
+        { offers: offers.map(toOfferDto), originQueue: SELECT_QUEUE, runId: data.runId },
         { jobId: job.id },
       );
       logger.info(
@@ -297,12 +311,12 @@ export const registerWorker = async (
         { jobId: job.id, offerCount: data.offers.length, queue: SELECT_QUEUE, runId: data.runId },
         "select started",
       );
-      const deals = await steps.select(data.offers);
+      const deals = await steps.select(data.offers.map(fromOfferDto));
       await sendNext(
         boss,
         logger,
         SEND_QUEUE,
-        { deals, originQueue: SEND_QUEUE, runId: data.runId },
+        { deals: deals.map(toOfferDto), originQueue: SEND_QUEUE, runId: data.runId },
         { jobId: job.id },
       );
       logger.info(
@@ -319,7 +333,7 @@ export const registerWorker = async (
         { dealCount: data.deals.length, jobId: job.id, queue: SEND_QUEUE, runId: data.runId },
         "send started",
       );
-      const sentCount = await steps.send(data.deals);
+      const sentCount = await steps.send(data.deals.map(fromOfferDto));
       logger.info(
         {
           dealCount: data.deals.length,

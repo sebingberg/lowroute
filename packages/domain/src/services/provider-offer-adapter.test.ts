@@ -43,27 +43,25 @@ describe("toNormalizedOffer", () => {
     expect(offer?.score).toBe(0);
   });
 
-  it("keeps a 480-minute connection at an 8-hour cap but drops 481", () => {
-    const atCap = toNormalizedOffer(
-      { ...baseOffer, risk: { ...baseOffer.risk, connection_minutes_min: 480 } },
-      ctx,
-      rules,
-    );
-    const overCap = toNormalizedOffer(
+  it("does not cap connection_minutes_min (shortest connection, probe-side duty)", () => {
+    // ! connection_minutes_min is the MINIMUM layover (mappers stamp Math.min
+    // ! for the short-connection scoring penalty), so the adapter cannot treat
+    // ! it as a maximum. Cap enforcement lives in the probes (exceedsLayoverCap
+    // ! on the full layover list); a long minimum passes the adapter untouched.
+    const longMinimum = toNormalizedOffer(
       { ...baseOffer, risk: { ...baseOffer.risk, connection_minutes_min: 481 } },
       ctx,
       rules,
     );
 
-    expect(atCap?.connection_minutes_min).toBe(480);
-    expect(overCap).toBeNull();
+    expect(longMinimum?.connection_minutes_min).toBe(481);
   });
 
-  it("maps unknown XX merchant country to merchant_outside_ar", () => {
+  it("maps unknown XX merchant country to foreign_card without dropping", () => {
     const offer = toNormalizedOffer({ ...baseOffer, merchant_country: "xx" }, ctx, rules);
 
     expect(offer?.merchant_country).toBe("XX");
-    expect(offer?.payment_path).toBe("merchant_outside_ar");
+    expect(offer?.payment_path).toBe("foreign_card");
   });
 
   it("maps AR merchant to foreign_card with no invented exception class", () => {
@@ -112,6 +110,22 @@ describe("toNormalizedOffer", () => {
     expect(eur).toBeNull();
   });
 
+  it("drops zero, negative, and non-finite quoted amounts", () => {
+    const zero = toNormalizedOffer({ ...baseOffer, quoted_amount: 0 }, ctx, rules);
+    const negative = toNormalizedOffer({ ...baseOffer, quoted_amount: -50 }, ctx, rules);
+    const nan = toNormalizedOffer({ ...baseOffer, quoted_amount: Number.NaN }, ctx, rules);
+    const infinite = toNormalizedOffer(
+      { ...baseOffer, quoted_amount: Number.POSITIVE_INFINITY },
+      ctx,
+      rules,
+    );
+
+    expect(zero).toBeNull();
+    expect(negative).toBeNull();
+    expect(nan).toBeNull();
+    expect(infinite).toBeNull();
+  });
+
   it("drops reversed return-before-departure ranges explicitly", () => {
     const offer = toNormalizedOffer(
       { ...baseOffer, departure_date: "2026-10-15", return_date: "2026-10-01" },
@@ -132,6 +146,32 @@ describe("toNormalizedOffer", () => {
 
     expect(badDeparture).toBeNull();
     expect(badReturn).toBeNull();
+  });
+
+  it("rejects impossible calendar dates that Date.parse would normalize", () => {
+    // ! Date.parse("2026-02-30T00:00:00.000Z") yields 2026-03-02 instead of
+    // ! NaN; the adapter round-trips the canonical form to fail closed.
+    const badDeparture = toNormalizedOffer(
+      { ...baseOffer, departure_date: "2026-02-30" },
+      ctx,
+      rules,
+    );
+    const badReturn = toNormalizedOffer({ ...baseOffer, return_date: "2026-02-30" }, ctx, rules);
+    const badMonth = toNormalizedOffer({ ...baseOffer, departure_date: "2026-13-01" }, ctx, rules);
+
+    expect(badDeparture).toBeNull();
+    expect(badReturn).toBeNull();
+    expect(badMonth).toBeNull();
+  });
+
+  it("keeps valid leap-day dates unaffected", () => {
+    const leapDay = toNormalizedOffer(
+      { ...baseOffer, departure_date: "2024-02-29", return_date: "2024-03-14" },
+      ctx,
+      rules,
+    );
+
+    expect(leapDay?.trip_days).toBe(14);
   });
 
   it("uppercases origin and destination IATA codes", () => {

@@ -5,11 +5,8 @@ import {
   buildAlertFingerprint,
   buildOfferFingerprint,
   buildScoringService,
-  buildTravelRulesService,
   DEFAULT_ALERT_TEMPLATE_VERSION,
   Money,
-  type ProviderOfferInput,
-  toNormalizedOffer,
 } from "@lowroute/domain";
 import {
   alertsRepository,
@@ -17,7 +14,14 @@ import {
   getPool,
   offersRepository,
 } from "@lowroute/persistence";
+import type {
+  NormalizedProviderOffer,
+  ProviderName,
+  ProviderProbe,
+} from "@lowroute/providers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+import { fetchOffers } from "../../apps/service/src/jobs/fetch-offers.js";
 
 const DATABASE_URL =
   process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/lowroute";
@@ -60,41 +64,92 @@ if (!dbReachable) {
   );
 }
 
-const stubRisk = {
-  self_transfer: false,
-  separate_tickets: false,
-  airport_change: false,
-  overnight_layover: false,
-  checked_bag_included: false,
-  carry_on_included: true,
-  connection_minutes_min: 60,
-};
-
-const stubDeal: ProviderOfferInput = {
-  provider: "duffel",
+const search = {
   origin: "EZE",
   destination: "MAD",
   departure_date: "2026-10-01",
   return_date: "2026-10-15",
+  cabin: "economy" as const,
+  adults: 1 as const,
+  max_layover_hours: MAX_LAYOVER_HOURS,
+};
+
+const stubEnv = {
+  DUFFEL_API_KEY: "test-duffel-key",
+  KIWI_API_KEY: "test-kiwi-key",
+  TRAVELPAYOUTS_TOKEN: "test-tp-token",
+};
+
+const stubOffer = (
+  id: string,
+  overrides: Partial<NormalizedProviderOffer> = {},
+): NormalizedProviderOffer => ({
+  provider: "duffel",
+  id,
+  origin: search.origin,
+  destination: search.destination,
+  departure_date: search.departure_date,
+  return_date: search.return_date,
   merchant_country: "US",
   currency: "USD",
   quoted_amount: 500,
-  risk: stubRisk,
-};
+  risk: {
+    self_transfer: false,
+    separate_tickets: false,
+    airport_change: false,
+    overnight_layover: false,
+    checked_bag_included: false,
+    carry_on_included: true,
+    connection_minutes_min: 60,
+  },
+  raw_ref: `duffel:test:${id}`,
+  ...overrides,
+});
 
-// ! Mirrors fetchOffers.toDomainOffers: one bad quote must not fail the batch.
-// ! Rules service is built once per batch from the search cap, same as production.
-const rules = buildTravelRulesService({ MAX_LAYOVER_HOURS });
-const toDomainOffers = (
-  offers: readonly ProviderOfferInput[],
-): ReturnType<typeof toNormalizedOffer>[] =>
-  offers.map((offer) => {
-    try {
-      return toNormalizedOffer(offer, { maxLayoverHours: MAX_LAYOVER_HOURS }, rules);
-    } catch {
-      return null;
-    }
-  });
+// ! Stubbed provider batch goes through the production fetchOffers wiring
+// ! (probe fan-out + provider->domain adapter) with injected stub probes:
+// ! one deal, one long-minimum-connection offer, one malformed quote.
+const stubProbes: Readonly<Record<ProviderName, ProviderProbe>> = {
+  duffel: {
+    run: async (request) => ({
+      provider: "duffel",
+      searched_at_utc: "2026-09-12T00:00:00.000Z",
+      request,
+      offers: [
+        stubOffer("d1"),
+        stubOffer("d-long", {
+          quoted_amount: 450,
+          risk: {
+            self_transfer: false,
+            separate_tickets: false,
+            airport_change: false,
+            overnight_layover: false,
+            checked_bag_included: false,
+            carry_on_included: true,
+            connection_minutes_min: 481,
+          },
+        }),
+        stubOffer("d-bad", { currency: "XX", quoted_amount: 100 }),
+      ],
+    }),
+  },
+  kiwi: {
+    run: async (request) => ({
+      provider: "kiwi",
+      searched_at_utc: "2026-09-12T00:00:00.000Z",
+      request,
+      offers: [],
+    }),
+  },
+  travelpayouts: {
+    run: async (request) => ({
+      provider: "travelpayouts",
+      searched_at_utc: "2026-09-12T00:00:00.000Z",
+      request,
+      offers: [],
+    }),
+  },
+};
 
 const cleanupRoute = async (): Promise<void> => {
   const pool = getPool();
@@ -131,17 +186,19 @@ describe.skipIf(!dbReachable)(
     });
 
     it("scores an adapted deal, persists it, and suppresses resend within cooldown", async () => {
-      // Stubbed provider batch: one deal, one over the layover cap, one malformed quote.
-      const [deal, overCap, malformed] = toDomainOffers([
-        stubDeal,
-        { ...stubDeal, risk: { ...stubRisk, connection_minutes_min: 481 } },
-        { ...stubDeal, currency: "XX", quoted_amount: 100 },
-      ]);
-      expect(deal).not.toBeNull();
-      expect(overCap).toBeNull();
-      expect(malformed).toBeNull();
+      const { offers, errors } = await fetchOffers(
+        { search },
+        { probes: stubProbes, env: stubEnv },
+      );
+      expect(errors).toEqual([]);
+      // ! The 481-minute minimum survives: connection_minutes_min is the
+      // ! SHORTEST connection and the layover cap is enforced probe-side
+      // ! (exceedsLayoverCap), which stub probes bypass. Only the malformed
+      // ! quote drops.
+      expect(offers).toHaveLength(2);
+      const deal = offers.find((offer) => offer.connection_minutes_min === 60);
       if (!deal) {
-        throw new Error("stubbed deal must survive toNormalizedOffer");
+        throw new Error("stubbed deal must survive fetchOffers");
       }
 
       // Score: rank stamps score = -payable for a clean itinerary.
