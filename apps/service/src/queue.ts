@@ -1,11 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readEnv } from "@lowroute/config";
-import {
-  fromOfferDto,
-  type NormalizedOffer,
-  type OfferDto,
-  toOfferDto,
-} from "@lowroute/domain";
+import { fromOfferDto, type NormalizedOffer, type OfferDto, toOfferDto } from "@lowroute/domain";
 import type { NormalizedSearchRequest } from "@lowroute/providers";
 import {
   type Queue as BossQueue,
@@ -16,7 +11,7 @@ import {
 import { pino } from "pino";
 
 import { type Candidate, discoverCandidates } from "./jobs/discover-candidates.js";
-import { fetchOffers, type FetchOffersDeps } from "./jobs/fetch-offers.js";
+import { type FetchOffersDeps, fetchOffers } from "./jobs/fetch-offers.js";
 import { scoreOffers } from "./jobs/score-offers.js";
 import { selectDeals } from "./jobs/select-deals.js";
 import { sendAlerts } from "./jobs/send-alerts.js";

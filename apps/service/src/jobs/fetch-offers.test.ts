@@ -148,9 +148,9 @@ describe("fetchOffers", () => {
       "kiwi",
       "travelpayouts",
     ]);
-    expect(
-      output.offers.find((offer) => offer.provider === "kiwi")?.connection_minutes_min,
-    ).toBe(481);
+    expect(output.offers.find((offer) => offer.provider === "kiwi")?.connection_minutes_min).toBe(
+      481,
+    );
   });
 
   it("maps AR merchant offers to foreign_card through the chain", async () => {

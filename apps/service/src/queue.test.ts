@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-
 import { Money, toOfferDto } from "@lowroute/domain";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CHAIN_QUEUES,
@@ -9,9 +8,9 @@ import {
   DEFAULT_DISCOVERY_INTERVAL_MIN,
   DISCOVER_QUEUE,
   discoveryCron,
-  fetchCandidateOffers,
   FETCH_QUEUE,
   type FetchJobData,
+  fetchCandidateOffers,
   type QueueJob,
   registerWorker,
   resolveDiscoveryIntervalMin,

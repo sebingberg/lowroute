@@ -14,11 +14,7 @@ import {
   getPool,
   offersRepository,
 } from "@lowroute/persistence";
-import type {
-  NormalizedProviderOffer,
-  ProviderName,
-  ProviderProbe,
-} from "@lowroute/providers";
+import type { NormalizedProviderOffer, ProviderName, ProviderProbe } from "@lowroute/providers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { fetchOffers } from "../../apps/service/src/jobs/fetch-offers.js";
