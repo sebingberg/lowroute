@@ -23,7 +23,7 @@ export type ReplayResult = {
 };
 
 export type ReplayBoss = {
-  readonly complete: (queue: string, id: string) => Promise<void>;
+  readonly complete: (queue: string, id: string) => Promise<unknown>;
   readonly fetch: <T>(
     queue: string,
     options: { batchSize?: number },
