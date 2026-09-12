@@ -88,6 +88,9 @@ const envSchema = z.object({
     .positive()
     .default(PROVIDER_REQ_LIMIT_PER_RUN_DEFAULT.travelpayouts),
   PROVIDER_LIMIT_OVERFLOW_BEHAVIOR: z.enum(["skip", "defer"]).default("skip"),
+  DUFFEL_API_KEY: z.string().default(""),
+  KIWI_API_KEY: z.string().default(""),
+  TRAVELPAYOUTS_TOKEN: z.string().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;
