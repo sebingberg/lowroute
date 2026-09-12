@@ -46,8 +46,15 @@ export const parseReplayArgs = (args: string[]): ReplayArgs => {
   if (!originQueue || !(CHAIN_QUEUES as readonly string[]).includes(originQueue)) {
     throw new Error(`--queue must be one of ${CHAIN_QUEUES.join(", ")}\n${REPLAY_USAGE}`);
   }
-  const limit = Number.parseInt(readFlag(args, "--limit") ?? String(REPLAY_DEFAULT_LIMIT), 10);
-  if (!Number.isInteger(limit) || limit <= 0) {
+  // ! parseInt would accept "10junk" or "1.5" and a bare --limit would
+  // ! silently fall back to the default, replaying an unintended batch size.
+  const limitText = readFlag(args, "--limit");
+  if (args.includes("--limit") && limitText === undefined) {
+    throw new Error(`--limit must be a positive integer\n${REPLAY_USAGE}`);
+  }
+  const rawLimit = limitText ?? String(REPLAY_DEFAULT_LIMIT);
+  const limit = /^\d+$/.test(rawLimit) ? Number(rawLimit) : Number.NaN;
+  if (!Number.isSafeInteger(limit) || limit <= 0) {
     throw new Error(`--limit must be a positive integer\n${REPLAY_USAGE}`);
   }
   return { dryRun: args.includes("--dry-run"), limit, originQueue };
