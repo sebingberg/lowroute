@@ -19,7 +19,7 @@
     "@lowroute/persistence": "workspace:*",
     "@lowroute/providers": "workspace:*",
     "hono": "4.13.5",
-    "pg-boss": "12.27.0",
+    "pg-boss": "12.32.0",
     "pino": "10.3.1"
   }
 }
