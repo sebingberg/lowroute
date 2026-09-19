@@ -26,7 +26,7 @@
     "benchmark:gate": "tsx scripts/validate-recent-deals-benchmark.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
+    "@biomejs/biome": "2.5.13",
     "@types/node": "26.2.0",
     "@types/pg": "8.23.1",
     "lefthook": "^2.1.6",
