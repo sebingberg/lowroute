@@ -37,5 +37,12 @@
     "typescript": "7.0.2",
     "vite": "8.2.4",
     "vitest": "4.1.12"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": "5.0.12",
+      "katex": "0.18.2",
+      "re2js": "2.8.7"
+    }
   }
 }
