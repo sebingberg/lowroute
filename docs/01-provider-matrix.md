@@ -10,11 +10,11 @@ tracks completion of that work separately from the documentation columns below.
 
 ## Access and Commercial Gate
 
-| Provider | Credentials Tested | Terms Allow Use Case | Rate Limits Known | Cost/Billing Documented | Phase 1 Status |
-| --- | --- | --- | --- | --- | --- |
-| Duffel | Pending | Pending | Pending | Pending | Pending |
-| Kiwi Tequila | Pending | Pending | Pending | Pending | Pending |
-| Travelpayouts | Pending | Pending | Pending | Pending | Pending |
+| Provider      | Credentials Tested | Terms Allow Use Case | Rate Limits Known | Cost/Billing Documented | Phase 1 Status |
+| ------------- | ------------------ | -------------------- | ----------------- | ----------------------- | -------------- |
+| Duffel        | Pending            | Pending              | Pending           | Pending                 | Pending        |
+| Kiwi Tequila  | Pending            | Pending              | Pending           | Pending                 | Pending        |
+| Travelpayouts | Pending            | Pending              | Pending           | Pending                 | Pending        |
 
 ## Notes
 
