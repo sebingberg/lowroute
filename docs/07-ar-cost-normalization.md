@@ -27,11 +27,11 @@ Examples:
 
 ## Rules Table
 
-| Rule | Condition | Action |
-| --- | --- | --- |
-| R1 | Merchant outside AR | Use quoted amount as payable basis |
-| R2 | Merchant in AR and ARS-only fare | Apply AR exception tax stack |
-| R3 | Merchant in AR but not ARS-only | No tax stack, flag for review |
+| Rule | Condition                        | Action                             |
+| ---- | -------------------------------- | ---------------------------------- |
+| R1   | Merchant outside AR              | Use quoted amount as payable basis |
+| R2   | Merchant in AR and ARS-only fare | Apply AR exception tax stack       |
+| R3   | Merchant in AR but not ARS-only  | No tax stack, flag for review      |
 
 ## FX Policy
 

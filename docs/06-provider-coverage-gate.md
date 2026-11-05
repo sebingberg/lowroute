@@ -50,5 +50,5 @@ Manual override is allowed only when:
 ## Report Template
 
 | Provider | Probe Date | Rows Probed | Matches | Reproduction % | Price Tolerance % Pass | Result | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| _TBD_ | _TBD_ | _TBD_ | _TBD_ | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| -------- | ---------- | ----------- | ------- | -------------- | ---------------------- | ------ | ----- |
+| _TBD_    | _TBD_      | _TBD_       | _TBD_   | _TBD_          | _TBD_                  | _TBD_  | _TBD_ |
