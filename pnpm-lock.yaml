@@ -46,7 +46,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.0.0
-        version: 2.1.6(hono@4.13.5)
+        version: 2.1.6(hono@4.13.11)
       '@lowroute/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -63,8 +63,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/providers
       hono:
-        specifier: 4.13.5
-        version: 4.13.5
+        specifier: 4.13.11
+        version: 4.13.11
       pg-boss:
         specifier: 12.27.0
         version: 12.27.0
@@ -779,8 +779,8 @@ packages:
     resolution: {integrity: sha512-NLvV9ubZ6NDsJaOpKPy3cQeJpKi9DcWiyCiFUpJPA0YihRqiE6RWaLUmgNNPr8MgPpLZjnBjSmou7uZBRJv9wA==}
     engines: {node: '>=20'}
 
-  hono@4.13.5:
-    resolution: {integrity: sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw==}
+  hono@4.13.11:
+    resolution: {integrity: sha512-/SMX/RQNJn7oNmFwH6DtwDqcrzZU2otm1FD6OJe2cWF6cfy/F8hq0XVBv7xW3FTJshRQwuBnXHDq2kNsdZnshg==}
     engines: {node: '>=16.9.0'}
 
   ignore@7.0.5:
@@ -1574,9 +1574,9 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@hono/node-server@2.1.6(hono@4.13.5)':
+  '@hono/node-server@2.1.6(hono@4.13.11)':
     dependencies:
-      hono: 4.13.5
+      hono: 4.13.11
 
   '@jridgewell/sourcemap-codec@1.6.0': {}
 
@@ -1923,7 +1923,7 @@ snapshots:
       slash: 5.1.0
       unicorn-magic: 0.4.0
 
-  hono@4.13.5: {}
+  hono@4.13.11: {}
 
   ignore@7.0.5: {}
 
