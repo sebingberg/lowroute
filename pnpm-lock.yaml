@@ -33,8 +33,8 @@ importers:
         specifier: 9.0.0
         version: 9.0.0(@types/pg@8.23.1)(pg@8.23.1)
       pg-boss:
-        specifier: 12.38.0
-        version: 12.38.0(@opentelemetry/api@1.10.0)
+        specifier: 12.38.2
+        version: 12.38.2(@opentelemetry/api@1.10.0)
       tsx:
         specifier: 4.23.15
         version: 4.23.15
@@ -52,7 +52,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.0.0
-        version: 2.1.6(hono@4.13.11)
+        version: 2.1.8(hono@4.13.11)
       '@lowroute/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -72,8 +72,8 @@ importers:
         specifier: 4.13.11
         version: 4.13.11
       pg-boss:
-        specifier: 12.38.0
-        version: 12.38.0(@opentelemetry/api@1.10.0)
+        specifier: 12.38.2
+        version: 12.38.2(@opentelemetry/api@1.10.0)
       pino:
         specifier: 10.3.1
         version: 10.3.1
@@ -343,8 +343,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hono/node-server@2.1.6':
-    resolution: {integrity: sha512-p/KH9MnfNcsm3sR6x4lNgm5j+QN4Et8srKredl9DZfXiyZ1UQ3aQ2YVpFLbqktYN5JI+DB+VZFKM2PqE5hLKjQ==}
+  '@hono/node-server@2.1.8':
+    resolution: {integrity: sha512-jdf7FHh6A1lzjpHHQUgxsg2GeER2vMetnAOfeActzcoli6jamlK+NAwL6Dsr5Fl3BS3tYUQzCdtZjU8Qxv7bEA==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: ^4 || ^5.0.0-0
@@ -711,8 +711,8 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
-  cron-parser@5.10.3:
-    resolution: {integrity: sha512-Fwlmlgiyoj5e7XDCy5T3ueFd3imgt714k7xjAzhkOBUrUgQxWtsjS7kWSEN3efDX34bebxBJAmPoCSisHvjlpw==}
+  cron-parser@5.10.5:
+    resolution: {integrity: sha512-zxFew0gkBdb9HudAqeNLIZ2Phczw8oQDGDMYc1HUYvAaxZqhML2gZyUwVqaOs23YKDWXRRvd/nNo0ycGdXt80A==}
     engines: {node: '>=18'}
 
   debug@4.4.3:
@@ -1166,8 +1166,8 @@ packages:
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
-  pg-boss@12.38.0:
-    resolution: {integrity: sha512-felA3fyPSJwWk5cb/VwAgnudCAzWEdgBjjf+eukXm8pExlwkhjdBbOMukMyG5s8uZHO6fZZZcaIaTa3oKpfSCg==}
+  pg-boss@12.38.2:
+    resolution: {integrity: sha512-nvB9hB2cDJGSPUwYjN/Mth+EE3zvxffkp7uKXIiYloMAaxSoEiutmZi9mpSW85hNCcPChf3yicNXdwhIWkv2nA==}
     engines: {node: '>=22.12.0'}
     hasBin: true
     peerDependencies:
@@ -1296,8 +1296,8 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  rrule-temporal@2.2.8:
-    resolution: {integrity: sha512-+wWUe0J02oMh1UWKIt1RTu2H0Cz+gP11O/iweK0MN2UP6JLGeepTUkbSBa90Hxq0W+ywSxM9IlJNouIUdMOwhg==}
+  rrule-temporal@2.2.9:
+    resolution: {integrity: sha512-5Bc+IxlGKZtOF/JtkM+39VtK9uYvg1NRWGzZCy2QQj9KFZ4mMMa949GMtGv0Ud/bzyk2KuGhwxmVDuq8cnbzuA==}
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
@@ -1644,7 +1644,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@hono/node-server@2.1.6(hono@4.13.11)':
+  '@hono/node-server@2.1.8(hono@4.13.11)':
     dependencies:
       hono: 4.13.11
 
@@ -1891,7 +1891,7 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  cron-parser@5.10.3:
+  cron-parser@5.10.5:
     dependencies:
       luxon: 3.7.2
 
@@ -2425,12 +2425,12 @@ snapshots:
 
   pathe@2.0.3: {}
 
-  pg-boss@12.38.0(@opentelemetry/api@1.10.0):
+  pg-boss@12.38.2(@opentelemetry/api@1.10.0):
     dependencies:
       '@opentelemetry/api': 1.10.0
-      cron-parser: 5.10.3
+      cron-parser: 5.10.5
       pg: 8.23.1
-      rrule-temporal: 2.2.8
+      rrule-temporal: 2.2.9
       serialize-error: 13.1.0
     transitivePeerDependencies:
       - pg-native
@@ -2568,7 +2568,7 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.2.16
       '@rolldown/binding-win32-x64-msvc': 1.2.16
 
-  rrule-temporal@2.2.8:
+  rrule-temporal@2.2.9:
     dependencies:
       temporal-spec: 1.0.1
 
