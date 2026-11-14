@@ -32,7 +32,7 @@
     "lefthook": "^2.1.6",
     "markdownlint-cli2": "0.24.0",
     "node-pg-migrate": "9.0.0",
-    "pg-boss": "12.38.0",
+    "pg-boss": "12.38.2",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vite": "8.2.4",
